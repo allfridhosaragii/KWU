@@ -3,7 +3,9 @@ import trimesh,numpy as np,vtk
 from vtk.util.numpy_support import numpy_to_vtk,numpy_to_vtkIdTypeArray
 root=Path(__file__).parent.parent
 out=root/'site/assets/previews';out.mkdir(exist_ok=True,parents=True)
-for name in ['bracelet','ring','necklace','bag-charm','phone','tablet','macbook','bottle']:
+catalog=__import__('json').loads((root/'site/models/model-catalog.json').read_text())
+variants=[k for group in catalog['groups'].values() for k in group]
+for name in ['bracelet','ring','necklace','bag-charm','phone','tablet','macbook','bottle']+variants:
  scene=trimesh.load(root/'site/models'/f'{name}.glb',force='scene')
  ren=vtk.vtkRenderer();ren.GradientBackgroundOn();ren.SetBackground(.92,.87,.82);ren.SetBackground2(.99,.975,.95)
  win=vtk.vtkRenderWindow();win.SetOffScreenRendering(1);win.SetSize(560,700);win.SetMultiSamples(8);win.AddRenderer(ren)

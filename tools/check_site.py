@@ -25,6 +25,14 @@ for kind in kinds:
  except Exception as e:errors.append(f'Invalid GLB {kind}: {e}')
  if not q.exists() or q.stat().st_size<1000:errors.append(f'Missing {kind} preview')
  if p.stat().st_size>3*1024*1024:errors.append(f'{kind} exceeds 3 MB model transfer budget')
+# Every selectable Apple variant must have its own GLB and poster.
+try:
+ catalog=json.loads((ROOT/'site/models/model-catalog.json').read_text(encoding='utf8'))
+ for family,variants in catalog['groups'].items():
+  for vid in variants:
+   if not (ROOT/'site/models'/f'{vid}.glb').is_file():errors.append(f'Missing variant GLB: {vid}')
+   if not (ROOT/'site/assets/previews'/f'{vid}.webp').is_file():errors.append(f'Missing variant preview: {vid}')
+except Exception as e: errors.append(f'Invalid model catalog: {e}')
 src=(ROOT/'src/app.ts').read_text(encoding='utf8')
 for path in ['/shop','/studio','/cart','/checkout','/help','/about','/login','/register','/account','/owner']:
  if path not in src:errors.append(f'Route absent from source: {path}')

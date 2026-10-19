@@ -70,3 +70,11 @@ This preview intentionally uses **native TypeScript + WebGL2** because GitHub Pa
 The downloadable models are functional geometric **prototypes**, not photorealistic scanned assets. Realistic skinned hands, detailed material PBR, full rigging, accurate MacBook hinge mechanics, precision-cut sticker UV/print exports, and mobile GPU validation on physical phones remain future work.
 
 Current browser regression suite covers route templates, visual overflow at selected emulated viewports, and demo buyer/owner workflows. Chromium under the test container is policy-blocked from network navigation and WebGL2, so native WebGL shaders/gestures cannot be certified on real hardware from these tests alone. See [QA](docs/QA_REPORT.md).
+
+## 3D Asset Pack v2 (20 Oktober 2026)
+
+Model procedurally authored sudah diperluas menjadi 21 GLB utama dan 21 poster WebP untuk keluarga iPhone 17 / iPhone Air / 17e, iPad Pro / Air, MacBook Air / Pro, serta ransel hitam, botol stainless, tangan dan kalung. Dalam Studio pengguna bisa mengganti model Apple, warna perkiraan sesuai varian resmi dan jenis casing HP.
+
+**Penting:** model 3D masih interpretasi prosedural dan **bukan replika fotorealistik 1:1**. Detail resmi dan keterbatasan ada dalam [`3D Asset Research/00_STATUS_RILIS.md`](3D%20Asset%20Research/00_STATUS_RILIS.md). GitHub Pages tetap demo statis tanpa backend atau pembayaran asli.
+
+QA: `python tools/check_site.py`, `python tools/check_models_v2.py`, `python tests/run_matrix.py`, `python tests/model_variants_e2e.py` (opsi terakhir memerlukan Playwright/Chromium).

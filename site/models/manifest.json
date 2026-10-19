@@ -1,50 +1,244 @@
 [
   {
-    "name": "bracelet",
-    "bytes": 203236,
-    "parts": 20,
-    "triangles": 12064
+    "id": "bracelet",
+    "file": "bracelet.glb",
+    "bytes": 506672,
+    "triangles": 26520,
+    "meshes": 10,
+    "kind": "bracelet",
+    "status": "procedural-v2"
   },
   {
-    "name": "ring",
-    "bytes": 197500,
-    "parts": 18,
-    "triangles": 11424
+    "id": "ring",
+    "file": "ring.glb",
+    "bytes": 500972,
+    "triangles": 25880,
+    "meshes": 8,
+    "kind": "ring",
+    "status": "procedural-v2"
   },
   {
-    "name": "necklace",
-    "bytes": 179708,
-    "parts": 5,
-    "triangles": 9504
+    "id": "necklace",
+    "file": "necklace.glb",
+    "bytes": 59644,
+    "triangles": 3568,
+    "meshes": 4,
+    "kind": "necklace",
+    "status": "procedural-v2"
   },
   {
-    "name": "bag-charm",
-    "bytes": 49176,
-    "parts": 5,
-    "triangles": 2236
+    "id": "bag-charm",
+    "file": "bag-charm.glb",
+    "bytes": 108988,
+    "triangles": 6732,
+    "meshes": 27,
+    "kind": "bag-charm",
+    "status": "reference-inspired-front-only"
   },
   {
-    "name": "phone",
-    "bytes": 9576,
-    "parts": 8,
-    "triangles": 504
+    "id": "bottle",
+    "file": "bottle.glb",
+    "bytes": 161080,
+    "triangles": 7728,
+    "meshes": 7,
+    "kind": "bottle",
+    "status": "reference-inspired-front-only"
   },
   {
-    "name": "tablet",
-    "bytes": 4452,
-    "parts": 3,
-    "triangles": 104
+    "id": "iphone-17",
+    "file": "iphone-17.glb",
+    "bytes": 36512,
+    "triangles": 2672,
+    "meshes": 17,
+    "kind": "phone",
+    "dims_mm": [
+      71.5,
+      149.6,
+      7.95
+    ],
+    "status": "manufacturer-dimensioned-procedural"
   },
   {
-    "name": "macbook",
-    "bytes": 2572,
-    "parts": 3,
-    "triangles": 36
+    "id": "iphone-air",
+    "file": "iphone-air.glb",
+    "bytes": 32652,
+    "triangles": 2272,
+    "meshes": 14,
+    "kind": "phone",
+    "dims_mm": [
+      74.7,
+      156.2,
+      5.64
+    ],
+    "status": "manufacturer-dimensioned-procedural"
   },
   {
-    "name": "bottle",
-    "bytes": 12132,
-    "parts": 4,
-    "triangles": 560
+    "id": "iphone-17-pro",
+    "file": "iphone-17-pro.glb",
+    "bytes": 42088,
+    "triangles": 3168,
+    "meshes": 21,
+    "kind": "phone",
+    "dims_mm": [
+      71.9,
+      150.0,
+      8.75
+    ],
+    "status": "manufacturer-dimensioned-procedural"
+  },
+  {
+    "id": "iphone-17-pro-max",
+    "file": "iphone-17-pro-max.glb",
+    "bytes": 42256,
+    "triangles": 3168,
+    "meshes": 21,
+    "kind": "phone",
+    "dims_mm": [
+      78.0,
+      163.4,
+      8.75
+    ],
+    "status": "manufacturer-dimensioned-procedural"
+  },
+  {
+    "id": "iphone-17e",
+    "file": "iphone-17e.glb",
+    "bytes": 32652,
+    "triangles": 2272,
+    "meshes": 14,
+    "kind": "phone",
+    "dims_mm": [
+      71.5,
+      146.7,
+      7.8
+    ],
+    "status": "manufacturer-dimensioned-procedural"
+  },
+  {
+    "id": "ipad-pro-11",
+    "file": "ipad-pro-11.glb",
+    "bytes": 19472,
+    "triangles": 1156,
+    "meshes": 8,
+    "kind": "tablet",
+    "dims_mm": [
+      177.5,
+      249.7,
+      5.3
+    ],
+    "status": "manufacturer-dimensioned-procedural"
+  },
+  {
+    "id": "ipad-pro-13",
+    "file": "ipad-pro-13.glb",
+    "bytes": 19472,
+    "triangles": 1156,
+    "meshes": 8,
+    "kind": "tablet",
+    "dims_mm": [
+      215.5,
+      281.6,
+      5.1
+    ],
+    "status": "manufacturer-dimensioned-procedural"
+  },
+  {
+    "id": "ipad-air-11",
+    "file": "ipad-air-11.glb",
+    "bytes": 17736,
+    "triangles": 1028,
+    "meshes": 7,
+    "kind": "tablet",
+    "dims_mm": [
+      178.5,
+      247.6,
+      6.1
+    ],
+    "status": "manufacturer-dimensioned-procedural"
+  },
+  {
+    "id": "ipad-air-13",
+    "file": "ipad-air-13.glb",
+    "bytes": 17732,
+    "triangles": 1028,
+    "meshes": 7,
+    "kind": "tablet",
+    "dims_mm": [
+      214.9,
+      280.6,
+      6.1
+    ],
+    "status": "manufacturer-dimensioned-procedural"
+  },
+  {
+    "id": "macbook-air-13",
+    "file": "macbook-air-13.glb",
+    "bytes": 134420,
+    "triangles": 16544,
+    "meshes": 58,
+    "kind": "macbook",
+    "dims_mm": [
+      304.1,
+      215.0,
+      11.3
+    ],
+    "status": "manufacturer-dimensioned-procedural"
+  },
+  {
+    "id": "macbook-air-15",
+    "file": "macbook-air-15.glb",
+    "bytes": 134420,
+    "triangles": 16544,
+    "meshes": 58,
+    "kind": "macbook",
+    "dims_mm": [
+      340.4,
+      237.6,
+      11.5
+    ],
+    "status": "manufacturer-dimensioned-procedural"
+  },
+  {
+    "id": "macbook-pro-14",
+    "file": "macbook-pro-14.glb",
+    "bytes": 134412,
+    "triangles": 16544,
+    "meshes": 58,
+    "kind": "macbook",
+    "dims_mm": [
+      312.6,
+      221.2,
+      15.5
+    ],
+    "status": "manufacturer-dimensioned-procedural"
+  },
+  {
+    "id": "macbook-pro-16",
+    "file": "macbook-pro-16.glb",
+    "bytes": 134412,
+    "triangles": 16544,
+    "meshes": 58,
+    "kind": "macbook",
+    "dims_mm": [
+      355.7,
+      248.1,
+      16.8
+    ],
+    "status": "manufacturer-dimensioned-procedural"
+  },
+  {
+    "id": "phone",
+    "file": "phone.glb",
+    "alias": "iphone-17"
+  },
+  {
+    "id": "tablet",
+    "file": "tablet.glb",
+    "alias": "ipad-pro-11"
+  },
+  {
+    "id": "macbook",
+    "file": "macbook.glb",
+    "alias": "macbook-air-13"
   }
 ]

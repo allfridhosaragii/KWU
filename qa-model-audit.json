@@ -1,0 +1,157 @@
+{
+  "passed": true,
+  "files": 21,
+  "expected": 21,
+  "assets": [
+    {
+      "asset": "bag-charm",
+      "bytes": 108988,
+      "triangles": 6732,
+      "mesh_count": 27,
+      "sha256": "2e908d44b78ad58a"
+    },
+    {
+      "asset": "bottle",
+      "bytes": 161080,
+      "triangles": 7728,
+      "mesh_count": 7,
+      "sha256": "ac8aaf619323cb51"
+    },
+    {
+      "asset": "bracelet",
+      "bytes": 506672,
+      "triangles": 26520,
+      "mesh_count": 10,
+      "sha256": "0633217e78ca5b50"
+    },
+    {
+      "asset": "ipad-air-11",
+      "bytes": 17736,
+      "triangles": 1028,
+      "mesh_count": 7,
+      "sha256": "1cba869e57b57018"
+    },
+    {
+      "asset": "ipad-air-13",
+      "bytes": 17732,
+      "triangles": 1028,
+      "mesh_count": 7,
+      "sha256": "d8b005d217fcc7fc"
+    },
+    {
+      "asset": "ipad-pro-11",
+      "bytes": 19472,
+      "triangles": 1156,
+      "mesh_count": 8,
+      "sha256": "53d210e56416f02d"
+    },
+    {
+      "asset": "ipad-pro-13",
+      "bytes": 19472,
+      "triangles": 1156,
+      "mesh_count": 8,
+      "sha256": "0be58f230678df7d"
+    },
+    {
+      "asset": "iphone-17",
+      "bytes": 36512,
+      "triangles": 2672,
+      "mesh_count": 17,
+      "sha256": "671e77d5de0d9078"
+    },
+    {
+      "asset": "iphone-17-pro",
+      "bytes": 42088,
+      "triangles": 3168,
+      "mesh_count": 21,
+      "sha256": "e07f93349a2c1b49"
+    },
+    {
+      "asset": "iphone-17-pro-max",
+      "bytes": 42256,
+      "triangles": 3168,
+      "mesh_count": 21,
+      "sha256": "834f1b5005bc5e3b"
+    },
+    {
+      "asset": "iphone-17e",
+      "bytes": 32652,
+      "triangles": 2272,
+      "mesh_count": 14,
+      "sha256": "773418c1dd267180"
+    },
+    {
+      "asset": "iphone-air",
+      "bytes": 32652,
+      "triangles": 2272,
+      "mesh_count": 14,
+      "sha256": "669ab57a8c40c215"
+    },
+    {
+      "asset": "macbook",
+      "bytes": 134420,
+      "triangles": 16544,
+      "mesh_count": 58,
+      "sha256": "adeccec8e69c3631"
+    },
+    {
+      "asset": "macbook-air-13",
+      "bytes": 134420,
+      "triangles": 16544,
+      "mesh_count": 58,
+      "sha256": "adeccec8e69c3631"
+    },
+    {
+      "asset": "macbook-air-15",
+      "bytes": 134420,
+      "triangles": 16544,
+      "mesh_count": 58,
+      "sha256": "17c93a6229745c01"
+    },
+    {
+      "asset": "macbook-pro-14",
+      "bytes": 134412,
+      "triangles": 16544,
+      "mesh_count": 58,
+      "sha256": "3ad96475ba45607c"
+    },
+    {
+      "asset": "macbook-pro-16",
+      "bytes": 134412,
+      "triangles": 16544,
+      "mesh_count": 58,
+      "sha256": "37b0cec4a3f1af35"
+    },
+    {
+      "asset": "necklace",
+      "bytes": 59644,
+      "triangles": 3568,
+      "mesh_count": 4,
+      "sha256": "7a88197f91f82208"
+    },
+    {
+      "asset": "phone",
+      "bytes": 36512,
+      "triangles": 2672,
+      "mesh_count": 17,
+      "sha256": "671e77d5de0d9078"
+    },
+    {
+      "asset": "ring",
+      "bytes": 500972,
+      "triangles": 25880,
+      "mesh_count": 8,
+      "sha256": "96031723ea2659ff"
+    },
+    {
+      "asset": "tablet",
+      "bytes": 19472,
+      "triangles": 1156,
+      "mesh_count": 8,
+      "sha256": "53d210e56416f02d"
+    }
+  ],
+  "errors": [],
+  "renderer_real_gpu_tested": false,
+  "accuracy_photogrammetric": false
+}

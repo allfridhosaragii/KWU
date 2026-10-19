@@ -1,0 +1,530 @@
+{
+  "checks": [
+    {
+      "name": "390px/phone/iphone-17 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/phone/iphone-17 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/phone/iphone-air selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/phone/iphone-air 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/phone/iphone-17-pro selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/phone/iphone-17-pro 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/phone/iphone-17-pro-max selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/phone/iphone-17-pro-max 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/phone/iphone-17e selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/phone/iphone-17e 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/phone has WebGL canvas",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/phone no JS error",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/tablet/ipad-pro-11 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/tablet/ipad-pro-11 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/tablet/ipad-pro-13 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/tablet/ipad-pro-13 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/tablet/ipad-air-11 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/tablet/ipad-air-11 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/tablet/ipad-air-13 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/tablet/ipad-air-13 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/tablet has WebGL canvas",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/tablet no JS error",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/macbook/macbook-air-13 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/macbook/macbook-air-13 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/macbook/macbook-air-15 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/macbook/macbook-air-15 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/macbook/macbook-pro-14 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/macbook/macbook-pro-14 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/macbook/macbook-pro-16 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/macbook/macbook-pro-16 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/macbook has WebGL canvas",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px/macbook no JS error",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px saved iPhone choice",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px saved clear case",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "390px home after studio",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/phone/iphone-17 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/phone/iphone-17 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/phone/iphone-air selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/phone/iphone-air 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/phone/iphone-17-pro selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/phone/iphone-17-pro 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/phone/iphone-17-pro-max selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/phone/iphone-17-pro-max 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/phone/iphone-17e selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/phone/iphone-17e 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/phone has WebGL canvas",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/phone no JS error",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/tablet/ipad-pro-11 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/tablet/ipad-pro-11 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/tablet/ipad-pro-13 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/tablet/ipad-pro-13 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/tablet/ipad-air-11 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/tablet/ipad-air-11 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/tablet/ipad-air-13 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/tablet/ipad-air-13 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/tablet has WebGL canvas",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/tablet no JS error",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/macbook/macbook-air-13 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/macbook/macbook-air-13 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/macbook/macbook-air-15 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/macbook/macbook-air-15 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/macbook/macbook-pro-14 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/macbook/macbook-pro-14 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/macbook/macbook-pro-16 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/macbook/macbook-pro-16 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/macbook has WebGL canvas",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px/macbook no JS error",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px saved iPhone choice",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px saved clear case",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "768px home after studio",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/phone/iphone-17 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/phone/iphone-17 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/phone/iphone-air selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/phone/iphone-air 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/phone/iphone-17-pro selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/phone/iphone-17-pro 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/phone/iphone-17-pro-max selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/phone/iphone-17-pro-max 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/phone/iphone-17e selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/phone/iphone-17e 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/phone has WebGL canvas",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/phone no JS error",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/tablet/ipad-pro-11 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/tablet/ipad-pro-11 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/tablet/ipad-pro-13 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/tablet/ipad-pro-13 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/tablet/ipad-air-11 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/tablet/ipad-air-11 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/tablet/ipad-air-13 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/tablet/ipad-air-13 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/tablet has WebGL canvas",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/tablet no JS error",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/macbook/macbook-air-13 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/macbook/macbook-air-13 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/macbook/macbook-air-15 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/macbook/macbook-air-15 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/macbook/macbook-pro-14 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/macbook/macbook-pro-14 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/macbook/macbook-pro-16 selector",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/macbook/macbook-pro-16 2D fallback selected",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/macbook has WebGL canvas",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px/macbook no JS error",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px saved iPhone choice",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px saved clear case",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "1440px home after studio",
+      "pass": true,
+      "extra": null
+    }
+  ],
+  "failures": []
+}

@@ -5,7 +5,7 @@ uniform mat4 uProjection;uniform float uYaw,uPitch,uDistance,uScale;
 uniform vec3 uTint;uniform float uUseTint;uniform float uAlpha;uniform vec3 uOffset;uniform float uLidAngle;uniform float uFingerBend;
 out vec3 vNormal;out vec3 vColor;out vec3 vPos;out float vAlpha;
 void main(){vec3 p=(aPosition+uOffset)*uScale;vec3 n=aNormal;
-if(uLidAngle!=0.){float cy=cos(uLidAngle),sy=sin(uLidAngle);p.y+=.8;float py=p.y,pz=p.z-.2;p.y=cy*py-sy*pz-.8;p.z=sy*py+cy*pz+.2;}
+if(uLidAngle!=0.){float cy=cos(uLidAngle),sy=sin(uLidAngle);float py=p.y,pz=p.z-.13;p.y=cy*py-sy*pz;p.z=sy*py+cy*pz+.13;}
 if(uFingerBend!=0. && p.y>.55){p.z+=uFingerBend*pow(max(0.,p.y-.55),2.);}
 
 float c=cos(uYaw),s=sin(uYaw);p=vec3(c*p.x+s*p.z,p.y,-s*p.x+c*p.z);n=vec3(c*n.x+s*n.z,n.y,-s*n.x+c*n.z);
@@ -73,7 +73,7 @@ export class Viewer3D {
         this.fallbackImage.alt = 'Pratinjau produk 2D ketika WebGL tidak tersedia';
         this.fallbackImage.style.cssText = 'width:100%;height:100%;object-fit:contain;padding:30px';
         this.canvas.parentElement?.appendChild(this.fallbackImage);
-    } this.fallbackImage.src = `${this.base}assets/previews/${this.options.kind}.webp`; }
+    } this.fallbackImage.src = `${this.base}assets/previews/${this.options.deviceModel || this.options.kind}.webp`; }
     compile(kind, source) { const g = this.gl, s = g.createShader(kind); g.shaderSource(s, source); g.compileShader(s); if (!g.getShaderParameter(s, g.COMPILE_STATUS))
         throw Error(g.getShaderInfoLog(s) || 'Shader gagal'); return s; }
     init() { const g = this.gl; try {
@@ -152,7 +152,9 @@ export class Viewer3D {
         const current = this.modelLoad;
         try {
             this.lastLoading = kind;
-            const res = await fetch(`${this.base}models/${kind}.glb`);
+            const allow = { phone: ['iphone-17', 'iphone-air', 'iphone-17-pro', 'iphone-17-pro-max', 'iphone-17e'], tablet: ['ipad-pro-11', 'ipad-pro-13', 'ipad-air-11', 'ipad-air-13'], macbook: ['macbook-air-13', 'macbook-air-15', 'macbook-pro-14', 'macbook-pro-16'] };
+            const selection = (allow[kind] || []).includes(this.options.deviceModel) ? this.options.deviceModel : kind;
+            const res = await fetch(`${this.base}models/${selection}.glb`);
             if (!res.ok)
                 throw Error(`${res.status} ${res.statusText}`);
             const all = await res.arrayBuffer();
@@ -201,7 +203,13 @@ export class Viewer3D {
                 this.fail('Model 3D belum berhasil dimuat. ' + String(e));
         }
     }
-    update(opts) { const changed = opts.kind !== this.options.kind; this.options = { ...opts }; if (changed) {
+    update(opts) { const changed = opts.kind !== this.options.kind || opts.deviceModel !== this.options.deviceModel; this.options = { ...opts }; if (!this.gl) {
+        if (this.fallbackImage) {
+            const file = opts.deviceModel || opts.kind;
+            this.fallbackImage.src = `${this.base}assets/previews/${file}.webp`;
+        }
+        return;
+    } if (changed) {
         this.reset();
         void this.load(opts.kind);
     }
@@ -238,25 +246,25 @@ export class Viewer3D {
             z = .74;
         }
         if (scene === 'bag-charm') {
-            x = .87 + (o.placement - 50) / 100 * .36;
-            y = -.68;
-            z = .48;
+            x = .86 + (o.placement - 50) / 100 * .32;
+            y = -.70;
+            z = .71;
         }
         if (scene === 'phone') {
             y = (o.placement - 50) / 100 * 1.85;
-            z = .20;
+            z = .18;
         }
         if (scene === 'tablet') {
             y = (o.placement - 50) / 100 * 1.24;
-            z = .12;
+            z = .095;
         }
         if (scene === 'macbook') {
-            y = (o.placement - 50) / 100 * 1.22 + .1;
-            z = .47;
+            y = (o.placement - 50) / 100 * 1.22 + .85;
+            z = .32;
         }
         if (scene === 'bottle') {
             y = (o.placement - 50) / 100 * 1.65;
-            z = .545;
+            z = .455;
         }
         const radius = .17 * Math.max(.55, Math.min(1.55, o.scale));
         const heart = o.ornament === 'heart';
@@ -280,9 +288,9 @@ export class Viewer3D {
             }
             let vz = z;
             if (scene === 'bottle') {
-                const theta = (o.placement - 50) / 100 * Math.PI + (vx - x) / .54;
-                vz = .54 * Math.cos(theta) + .014;
-                vx = .54 * Math.sin(theta);
+                const theta = (o.placement - 50) / 100 * Math.PI + (vx - x) / .44;
+                vz = .44 * Math.cos(theta) + .014;
+                vx = .44 * Math.sin(theta);
             }
             coords.push(vx, vy, vz);
             if (j > 0)
@@ -333,17 +341,17 @@ export class Viewer3D {
             g.uniform3f(this.u.uOffset, 0, 0, 0);
             g.uniform1f(this.u.uLidAngle, 0);
             g.uniform1f(this.u.uFingerBend, 0);
-            if (kind === 'ring' && s.index >= 16) {
-                const finger = [[-1.02, .37], [-.49, 1.1], [-.18, 1.23], [.14, 1.3], [.45, 1.07]][Math.max(0, Math.min(4, this.options.finger))];
-                g.uniform3f(this.u.uOffset, finger[0] + .18, finger[1] - 1.01, 0);
+            if (kind === 'ring' && s.index >= this.shapes.length - 2) {
+                const finger = [[-1.04, .12], [-.53, 1.10], [-.19, 1.10], [.15, 1.14], [.48, 1.03]][Math.max(0, Math.min(4, this.options.finger))];
+                g.uniform3f(this.u.uOffset, finger[0] + .19, finger[1] - 1.10, 0);
             }
-            if (kind === 'macbook' && s.index >= 1)
-                g.uniform1f(this.u.uLidAngle, (this.options.pose - 50) / 100 * 1.15);
-            if ((kind === 'ring' || kind === 'bracelet') && s.index >= 2 && s.index < 16)
-                g.uniform1f(this.u.uFingerBend, (this.options.pose - 50) / 100 * .45);
-            if (kind === 'phone' && s.index === 1) {
+            if (kind === 'macbook' && s.index >= this.shapes.length - 3 && s.index < this.shapes.length - 1)
+                g.uniform1f(this.u.uLidAngle, (this.options.pose - 50) / 100 * .72);
+            // Hand poses are baked into the procedural mesh; true skeletal rigging is a future production task.
+            if (kind === 'phone' && (s.index === 0 || s.index === 1 || s.index === this.shapes.length - 1)) {
                 tint = 1;
-                alpha = this.options.caseType === 'clear' ? .22 : 1;
+                if (s.index === this.shapes.length - 1)
+                    alpha = this.options.caseType === 'clear' ? .18 : .94;
             }
             if (kind === 'bottle' && s.index === 0)
                 tint = 1;
@@ -351,10 +359,9 @@ export class Viewer3D {
                 tint = 1;
             if (kind === 'tablet' && s.index === 0)
                 tint = 1;
-            if (kind === 'macbook' && s.index === 1)
+            if (kind === 'macbook' && (s.index === 0 || s.index === this.shapes.length - 3))
                 tint = 1;
-            if (kind === 'bracelet' && s.index >= 17)
-                tint = 1;
+            // Jewelry coloration remains intrinsic to the asset in this preview.
             const c = hexRGB(this.options.color);
             g.uniform3f(this.u.uTint, c[0], c[1], c[2]);
             g.uniform1f(this.u.uUseTint, tint);
