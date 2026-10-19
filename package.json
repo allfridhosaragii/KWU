@@ -1,0 +1,13 @@
+{
+  "name": "kwu-digital-atelier-pages-demo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mobile-first accessible 3D commerce prototype deployed to GitHub Pages. No real transactions.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --project tsconfig.json && python tools/check_site.py",
+    "test": "python -m pytest tests -q",
+    "models": "python tools/make_models.py"
+  },
+  "devDependencies": {"typescript": "^5.8.3"}
+}

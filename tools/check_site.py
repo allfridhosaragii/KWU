@@ -1,0 +1,38 @@
+"""Offline static export audit: no external deps, intended for CI."""
+import json,struct,re,sys
+from pathlib import Path
+ROOT=Path(__file__).resolve().parent.parent
+required=[ROOT/'site/index.html',ROOT/'site/404.html',ROOT/'site/assets/app.js',ROOT/'site/assets/viewer.js',ROOT/'site/assets/style.css',ROOT/'src/app.ts',ROOT/'src/viewer.ts',ROOT/'package.json',ROOT/'tsconfig.json']
+kinds=['bracelet','ring','necklace','bag-charm','phone','tablet','macbook','bottle']
+errors=[];info=[]
+for p in required:
+ if not p.is_file() or p.stat().st_size<20:errors.append(f'Missing/empty required file: {p.relative_to(ROOT)}')
+for kind in kinds:
+ p=ROOT/'site/models'/f'{kind}.glb';q=ROOT/'site/assets/previews'/f'{kind}.webp'
+ if not p.is_file():errors.append(f'Missing {kind} GLB');continue
+ try:
+  b=p.read_bytes();magic,version,size=struct.unpack_from('<III',b)
+  assert magic==0x46546c67 and version==2 and size==len(b)
+  jsize,jtype=struct.unpack_from('<II',b,12)
+  assert jtype==0x4e4f534a
+  gltf=json.loads(b[20:20+jsize]);assert gltf.get('meshes') and gltf.get('accessors')
+  tris=0
+  for mesh in gltf['meshes']:
+   for prim in mesh['primitives']:
+    tris+=gltf['accessors'][prim['indices']]['count']//3
+  assert tris>0
+  info.append(f'{kind}: {tris} triangles, {len(b)//1024} KiB')
+ except Exception as e:errors.append(f'Invalid GLB {kind}: {e}')
+ if not q.exists() or q.stat().st_size<1000:errors.append(f'Missing {kind} preview')
+ if p.stat().st_size>3*1024*1024:errors.append(f'{kind} exceeds 3 MB model transfer budget')
+src=(ROOT/'src/app.ts').read_text(encoding='utf8')
+for path in ['/shop','/studio','/cart','/checkout','/help','/about','/login','/register','/account','/owner']:
+ if path not in src:errors.append(f'Route absent from source: {path}')
+if 'Tidak ada pembayaran atau akun asli' not in src:errors.append('Missing global demo disclosure')
+if 'DOMPurify' in src:pass
+site_size=sum(p.stat().st_size for p in (ROOT/'site').rglob('*') if p.is_file())
+if site_size>8*1024*1024:errors.append('Static site exceeds 8 MB seed target')
+report={'passed':not errors,'models':info,'static_site_bytes':site_size,'issues':errors}
+(ROOT/'qa-static-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
+print(json.dumps(report,ensure_ascii=False,indent=2))
+sys.exit(1 if errors else 0)

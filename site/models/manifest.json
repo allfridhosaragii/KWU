@@ -1,0 +1,50 @@
+[
+  {
+    "name": "bracelet",
+    "bytes": 203236,
+    "parts": 20,
+    "triangles": 12064
+  },
+  {
+    "name": "ring",
+    "bytes": 197500,
+    "parts": 18,
+    "triangles": 11424
+  },
+  {
+    "name": "necklace",
+    "bytes": 179708,
+    "parts": 5,
+    "triangles": 9504
+  },
+  {
+    "name": "bag-charm",
+    "bytes": 49176,
+    "parts": 5,
+    "triangles": 2236
+  },
+  {
+    "name": "phone",
+    "bytes": 9576,
+    "parts": 8,
+    "triangles": 504
+  },
+  {
+    "name": "tablet",
+    "bytes": 4452,
+    "parts": 3,
+    "triangles": 104
+  },
+  {
+    "name": "macbook",
+    "bytes": 2572,
+    "parts": 3,
+    "triangles": 36
+  },
+  {
+    "name": "bottle",
+    "bytes": 12132,
+    "parts": 4,
+    "triangles": 560
+  }
+]
