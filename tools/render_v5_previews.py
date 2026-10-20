@@ -20,6 +20,17 @@ for name in NAMES:
  ren=vtk.vtkRenderer();win=vtk.vtkRenderWindow();win.SetSize(700,700);win.SetOffScreenRendering(True)
  win.AddRenderer(ren);imp.SetRenderWindow(win);imp.Update()
  ren.SetBackground(.974,.964,.946)
+ # Studio lights make PBR skin textures readable in offscreen card previews.
+ # The visitor still sees the physically textured GLB in the WebGL viewer.
+ if name in {'bracelet','ring','necklace'}:
+  ren.AutomaticLightCreationOff()
+  for xyz,power in [((-3,5,7),1.65),((4,2,6),1.10),((0,-4,2),.64)]:
+   light=vtk.vtkLight()
+   light.SetLightTypeToSceneLight()
+   light.SetPosition(*xyz)
+   light.SetFocalPoint(0,0,0)
+   light.SetIntensity(power)
+   ren.AddLight(light)
  # The MakeHuman-derived meshes are open at the wrist/bust cut. A flat-cell
  # preview exaggerates polygon facets; smooth point normals while retaining
  # the exact model coordinates and original PBR vertex colors.

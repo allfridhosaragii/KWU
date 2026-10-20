@@ -41,6 +41,8 @@ jobs:
         run: python tools/anatomy_refinement_v5.py
       - name: Replace procedural mannequin with CC0 human anatomy
         run: python tools/build_anatomical_cc0.py
+      - name: Enhance anatomical skin details (V6)
+        run: python tools/skin_detail_postprocess_v6.py
       - name: Refine device optical details and logo
         run: python tools/device_detail_v5.py
       - name: Update metadata and no-WebGL posters
