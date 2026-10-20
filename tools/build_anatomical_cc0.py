@@ -133,6 +133,17 @@ def jewelry_for_hand(name):
     return [ring,charm]
 
 
+def face_eyes():
+    # Conservative, minimal eye inserts at MakeHuman eye-bone anchors.
+    from make_models_v2 import sphere
+    out=[]
+    for x in (-.206,.206):
+        out.append(sphere((.087,.047,.026),(x,.793,.51),(233,227,219),3))
+        out.append(sphere((.032,.032,.011),(x,.793,.54),(78,66,58),3))
+        out.append(sphere((.014,.014,.007),(x,.793,.553),(30,26,25),2))
+    return out
+
+
 def save(name, meshes):
     scene=trimesh.Scene()
     for i,m in enumerate(meshes):
@@ -147,7 +158,9 @@ def build():
     assert SOURCE.exists(), f'Missing MakeHuman CC0 source: {SOURCE}'
     base=read_base()
     # Negative X is the character's right hand. Crop before elbows to focus jewelry.
-    hand_raw=crop_mesh(base,normal=[-1,0,0],point=[-3.67,0,0])
+    wrist=np.array([-4.31,2.45,1.74]);direction=np.array([.19,-.25,.95]);direction/=np.linalg.norm(direction)
+    hand_raw=crop_mesh(base,normal=[-1,0,0],point=[-3.45,0,0])
+    hand_raw=crop_mesh(hand_raw,normal=direction,point=wrist-.38*direction)
     hv,hf=trimesh.remesh.subdivide(hand_raw.vertices,hand_raw.faces)
     hand=align_hand(trimesh.Trimesh(vertices=hv,faces=hf,process=False))
     # Shoulder, collarbone, neck, chin, lips, nose, eyes and skull share source topology.
@@ -156,7 +169,7 @@ def build():
     bust=align_bust(trimesh.Trimesh(vertices=bv,faces=bf,process=False))
     assert len(hand.faces)>900 and len(bust.faces)>1400
     for n in ('bracelet','ring'):save(n,[hand,*jewelry_for_hand(n)])
-    save('necklace',[bust,*make_chain(bust)])
+    save('necklace',[bust,*make_chain(bust),*face_eyes()])
 
 if __name__=='__main__':
     build()
