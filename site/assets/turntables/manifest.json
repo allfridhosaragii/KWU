@@ -1,0 +1,317 @@
+{
+  "version": 10,
+  "models": {
+    "bracelet": {
+      "name": "bracelet",
+      "columns": 4,
+      "rows": 12,
+      "frames": 48,
+      "azimuthFrames": 24,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 400,
+      "bytes": 209360,
+      "skinVariants": [
+        "sawo-matang",
+        "kuning-langsat",
+        "light-beige",
+        "medium-tan",
+        "deep-brown"
+      ]
+    },
+    "ring": {
+      "name": "ring",
+      "columns": 4,
+      "rows": 12,
+      "frames": 48,
+      "azimuthFrames": 24,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 400,
+      "bytes": 195396,
+      "skinVariants": [
+        "sawo-matang",
+        "kuning-langsat",
+        "light-beige",
+        "medium-tan",
+        "deep-brown"
+      ]
+    },
+    "necklace": {
+      "name": "necklace",
+      "columns": 4,
+      "rows": 12,
+      "frames": 48,
+      "azimuthFrames": 24,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 400,
+      "bytes": 172116,
+      "skinVariants": [
+        "sawo-matang",
+        "kuning-langsat",
+        "light-beige",
+        "medium-tan",
+        "deep-brown"
+      ]
+    },
+    "bag-charm": {
+      "name": "bag-charm",
+      "columns": 4,
+      "rows": 8,
+      "frames": 32,
+      "azimuthFrames": 16,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 320,
+      "bytes": 58376,
+      "skinVariants": []
+    },
+    "phone": {
+      "name": "phone",
+      "columns": 4,
+      "rows": 8,
+      "frames": 32,
+      "azimuthFrames": 16,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 320,
+      "bytes": 35416,
+      "skinVariants": []
+    },
+    "tablet": {
+      "name": "tablet",
+      "columns": 4,
+      "rows": 8,
+      "frames": 32,
+      "azimuthFrames": 16,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 320,
+      "bytes": 31728,
+      "skinVariants": []
+    },
+    "macbook": {
+      "name": "macbook",
+      "columns": 4,
+      "rows": 8,
+      "frames": 32,
+      "azimuthFrames": 16,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 320,
+      "bytes": 59168,
+      "skinVariants": []
+    },
+    "bottle": {
+      "name": "bottle",
+      "columns": 4,
+      "rows": 8,
+      "frames": 32,
+      "azimuthFrames": 16,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 320,
+      "bytes": 54434,
+      "skinVariants": []
+    },
+    "iphone-17": {
+      "name": "iphone-17",
+      "columns": 4,
+      "rows": 8,
+      "frames": 32,
+      "azimuthFrames": 16,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 320,
+      "bytes": 35416,
+      "skinVariants": []
+    },
+    "iphone-air": {
+      "name": "iphone-air",
+      "columns": 4,
+      "rows": 8,
+      "frames": 32,
+      "azimuthFrames": 16,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 320,
+      "bytes": 31696,
+      "skinVariants": []
+    },
+    "iphone-17-pro": {
+      "name": "iphone-17-pro",
+      "columns": 4,
+      "rows": 8,
+      "frames": 32,
+      "azimuthFrames": 16,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 320,
+      "bytes": 46062,
+      "skinVariants": []
+    },
+    "iphone-17-pro-max": {
+      "name": "iphone-17-pro-max",
+      "columns": 4,
+      "rows": 8,
+      "frames": 32,
+      "azimuthFrames": 16,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 320,
+      "bytes": 46476,
+      "skinVariants": []
+    },
+    "iphone-17e": {
+      "name": "iphone-17e",
+      "columns": 4,
+      "rows": 8,
+      "frames": 32,
+      "azimuthFrames": 16,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 320,
+      "bytes": 31242,
+      "skinVariants": []
+    },
+    "ipad-pro-11": {
+      "name": "ipad-pro-11",
+      "columns": 4,
+      "rows": 8,
+      "frames": 32,
+      "azimuthFrames": 16,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 320,
+      "bytes": 31728,
+      "skinVariants": []
+    },
+    "ipad-pro-13": {
+      "name": "ipad-pro-13",
+      "columns": 4,
+      "rows": 8,
+      "frames": 32,
+      "azimuthFrames": 16,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 320,
+      "bytes": 32386,
+      "skinVariants": []
+    },
+    "ipad-air-11": {
+      "name": "ipad-air-11",
+      "columns": 4,
+      "rows": 8,
+      "frames": 32,
+      "azimuthFrames": 16,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 320,
+      "bytes": 35300,
+      "skinVariants": []
+    },
+    "ipad-air-13": {
+      "name": "ipad-air-13",
+      "columns": 4,
+      "rows": 8,
+      "frames": 32,
+      "azimuthFrames": 16,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 320,
+      "bytes": 35888,
+      "skinVariants": []
+    },
+    "macbook-air-13": {
+      "name": "macbook-air-13",
+      "columns": 4,
+      "rows": 8,
+      "frames": 32,
+      "azimuthFrames": 16,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 320,
+      "bytes": 59168,
+      "skinVariants": []
+    },
+    "macbook-air-15": {
+      "name": "macbook-air-15",
+      "columns": 4,
+      "rows": 8,
+      "frames": 32,
+      "azimuthFrames": 16,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 320,
+      "bytes": 58642,
+      "skinVariants": []
+    },
+    "macbook-pro-14": {
+      "name": "macbook-pro-14",
+      "columns": 4,
+      "rows": 8,
+      "frames": 32,
+      "azimuthFrames": 16,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 320,
+      "bytes": 51100,
+      "skinVariants": []
+    },
+    "macbook-pro-16": {
+      "name": "macbook-pro-16",
+      "columns": 4,
+      "rows": 8,
+      "frames": 32,
+      "azimuthFrames": 16,
+      "elevations": [
+        -10,
+        12
+      ],
+      "tileSize": 320,
+      "bytes": 50948,
+      "skinVariants": []
+    }
+  }
+}
