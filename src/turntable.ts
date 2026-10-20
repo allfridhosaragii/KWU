@@ -9,11 +9,27 @@ class RetinaStill {
  private lastKey='';
  private sequence=0;
  private disposed=false;
+ private readonly cachedFrames=new Map<string,HTMLImageElement>();
+ private readonly preloading=new Set<string>();
  constructor(host:HTMLElement,private base:string){
    const image=new Image();image.draggable=false;image.alt='';image.decoding='async';
    image.setAttribute('aria-hidden','true');
    image.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none;opacity:0;transition:opacity .11s linear;transform-origin:center center;z-index:1';
    host.append(image);this.image=image;
+ }
+ private preloadAdjacent(url:string,angle:number){
+   for(const offset of [-1,1]){
+     const neighbor=((angle+offset)%24+24)%24;
+     const next=url.replace(/a\d{2}\.webp/, 'a'+String(neighbor).padStart(2,'0')+'.webp');
+     if(this.cachedFrames.has(next)||this.preloading.has(next)||this.disposed)continue;
+     this.preloading.add(next);
+     const image=new Image();image.decoding='async';image.src=next;
+     void image.decode().then(()=>{
+       if(this.disposed)return;
+       this.cachedFrames.set(next,image);
+       while(this.cachedFrames.size>5)this.cachedFrames.delete(this.cachedFrames.keys().next().value!);
+     }).catch(()=>{}).finally(()=>this.preloading.delete(next));
+   }
  }
  display(model:string,tone:string,row:number,angle:number,zoom:number){
    if(this.disposed)return;
@@ -28,20 +44,25 @@ class RetinaStill {
    this.lastKey=url;this.image.style.opacity='0';
    if(this.timer!==undefined)clearTimeout(this.timer);
    const seq=++this.sequence;
+   const hot=this.cachedFrames.get(url);
+   if(hot){this.image.src=hot.src;this.image.style.opacity='1';this.image.dataset.hdFrame='1536';this.preloadAdjacent(url,a);return;}
    this.timer=window.setTimeout(async()=>{
      this.timer=undefined;
      try{
        const candidate=new Image();candidate.decoding='async';candidate.src=url;
        await candidate.decode();
        if(this.disposed||seq!==this.sequence||url!==this.lastKey)return;
-       this.image.src=url;this.image.style.opacity='1';
+       this.image.src=url;this.image.style.opacity='1';this.image.dataset.hdFrame='1536';
+       this.cachedFrames.set(url,candidate);
+       while(this.cachedFrames.size>5)this.cachedFrames.delete(this.cachedFrames.keys().next().value!);
+       this.preloadAdjacent(url,a);
      }catch{
        if(seq===this.sequence)this.image.style.opacity='0';
      }
-   },190);
+   },75);
  }
  reset(){if(this.disposed)return;this.sequence++;if(this.timer!==undefined)clearTimeout(this.timer);this.timer=undefined;this.lastKey='';this.image.style.opacity='0';}
- dispose(){this.reset();this.disposed=true;this.image.remove();}
+ dispose(){this.reset();this.disposed=true;this.cachedFrames.clear();this.preloading.clear();this.image.remove();}
 }
 
 /** Interactive 360° frame renderer. Rotates offline-rendered GLB views without WebGL.

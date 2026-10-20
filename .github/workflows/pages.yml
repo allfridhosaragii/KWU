@@ -47,6 +47,8 @@ jobs:
         run: python tools/skin_anatomy_v7.py
       - name: Repair incomplete anatomical fingernails (V11)
         run: python tools/repair_fingernails_v11.py
+      - name: Smooth anatomical surfaces without losing PBR textures (V14)
+        run: python tools/anatomy_surface_v14.py
       - name: Refine device optical details and logo
         run: python tools/device_detail_v5.py
       - name: Update metadata and no-WebGL posters
@@ -55,8 +57,8 @@ jobs:
           python tools/photo_previews_v5.py
       - name: Generate updated anatomy previews
         run: KWU_PREVIEW_MODELS=bracelet,ring,necklace xvfb-run -a python tools/render_v5_previews.py
-      - name: Generate retina 360-degree atlases for jewelry mannequins (V11)
-        run: KWU_TURNTABLE_MODELS=bracelet,ring,necklace xvfb-run -a python tools/build_turntables_v11.py
+      - name: Generate improved 360-degree atlases for all 21 models (V14)
+        run: xvfb-run -a python tools/build_turntables_v11.py
       - name: Verify HD atlases and retina 1536px still frames (V12)
         run: python tools/check_turntables_v11.py
       - name: Complete KWU demo owner forms and controls (V12)

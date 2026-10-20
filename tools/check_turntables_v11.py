@@ -23,12 +23,16 @@ for category in ('bracelet','ring','necklace'):
             with Image.open(path) as image:
                 assert image.size==(3072,4608),[path,image.size]
             checked.append(str(path.relative_to(BASE)))
-# The other 18 device model variants must retain a real V10 atlas.
+# All remaining device models must now use true 640px tiles, not old 320px sprites.
 for name,meta in manifest['models'].items():
     if name in ('bracelet','ring','necklace'):continue
-    if not meta.get('splitElevations'):
-        assert (BASE/f'{name}.webp').exists(),name
-print('V11 retina atlas integrity: PASS',len(checked),'HD images; legacy models preserved')
+    assert meta['tileSize']>=640 and meta['splitElevations'] and meta['atlasFormat']=='png',(name,meta)
+    for row in (0,1):
+        path=BASE/f'{name}--e{row}.png'
+        assert path.exists() and path.stat().st_size>5000,path
+        with Image.open(path) as image:
+            assert image.size==(4*meta['tileSize'],4*meta['tileSize']),[name,image.size]
+print('V14 turntable atlas integrity: PASS',len(checked),'HD jewelry variants plus',len(manifest['models'])-3,'640px device models')
 
 
 # V12 progressive retina still images: all skin tones, two elevations and all
