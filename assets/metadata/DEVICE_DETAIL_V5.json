@@ -1,79 +1,79 @@
 [
   {
     "asset": "iphone-17",
-    "bytes": 177308,
+    "bytes": 177276,
     "meshes": 28,
     "triangles": 15986
   },
   {
     "asset": "iphone-air",
-    "bytes": 132256,
+    "bytes": 132224,
     "meshes": 20,
     "triangles": 9122
   },
   {
     "asset": "iphone-17-pro",
-    "bytes": 224220,
+    "bytes": 224188,
     "meshes": 37,
     "triangles": 22946
   },
   {
     "asset": "iphone-17-pro-max",
-    "bytes": 224520,
+    "bytes": 224484,
     "meshes": 37,
     "triangles": 22946
   },
   {
     "asset": "iphone-17e",
-    "bytes": 132264,
+    "bytes": 132228,
     "meshes": 20,
     "triangles": 9122
   },
   {
     "asset": "ipad-pro-11",
-    "bytes": 114492,
+    "bytes": 114460,
     "meshes": 14,
     "triangles": 7814
   },
   {
     "asset": "ipad-pro-13",
-    "bytes": 114492,
+    "bytes": 114456,
     "meshes": 14,
     "triangles": 7814
   },
   {
     "asset": "ipad-air-11",
-    "bytes": 112704,
+    "bytes": 112672,
     "meshes": 13,
     "triangles": 7686
   },
   {
     "asset": "ipad-air-13",
-    "bytes": 112708,
+    "bytes": 112672,
     "meshes": 13,
     "triangles": 7686
   },
   {
     "asset": "macbook-air-13",
-    "bytes": 232392,
+    "bytes": 232360,
     "meshes": 59,
     "triangles": 20194
   },
   {
     "asset": "macbook-air-15",
-    "bytes": 232392,
+    "bytes": 232360,
     "meshes": 59,
     "triangles": 20194
   },
   {
     "asset": "macbook-pro-14",
-    "bytes": 232388,
+    "bytes": 232352,
     "meshes": 59,
     "triangles": 20194
   },
   {
     "asset": "macbook-pro-16",
-    "bytes": 232388,
+    "bytes": 232356,
     "meshes": 59,
     "triangles": 20194
   }
