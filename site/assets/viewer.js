@@ -19,6 +19,7 @@ in vec3 vColor;
 in vec3 vPos;
 in float vAlpha;in vec2 vUV;
 uniform float uSurface;uniform sampler2D uMap;uniform float uHasMap;uniform float uPhoto;uniform float uPhotoColorize;uniform vec3 uTintPhoto;
+uniform float uSkin;uniform vec3 uSkinTone;uniform sampler2D uNormalMap;uniform float uHasNormal;
 out vec4 outColor;
 
 // Analytic studio key/fill. Retains one shader, no environment textures,
@@ -27,6 +28,18 @@ void main(){
  vec3 N=normalize(vNormal);
  if(!gl_FrontFacing) N=-N;
  vec4 texel=uHasMap>.5?texture(uMap,vUV):vec4(1.);
+ // Tangent-space skin normals reconstructed from mesh position / UV derivatives.
+ if(uSkin>.5 && uHasNormal>.5){
+    vec3 dpdx=dFdx(vPos), dpdy=dFdy(vPos);
+    vec2 duvdx=dFdx(vUV), duvdy=dFdy(vUV);
+    float determinant=duvdx.x*duvdy.y-duvdx.y*duvdy.x;
+    if(abs(determin)>0.0000001){
+      vec3 T=normalize(dpdx*duvdy.y-dpdy*duvdx.y);
+      vec3 B=normalize(dpdy*duvdx.x-dpdx*duvdy.x);
+      vec3 nMap=texture(uNormalMap,vUV).xyz*2.-1.;
+      N=normalize(N*nMap.z + .30*(T*nMap.x+B*nMap.y));
+    }
+ }
  if(texel.a<.08)discard;
  if(uPhoto>.5){
  vec3 c=texel.rgb;
@@ -36,8 +49,13 @@ void main(){
  outColor=vec4(c,texel.a*vAlpha);return;}
  vec3 V=normalize(-vPos);
  float metal=clamp(uSurface,0.,1.);
- float rough=mix(.81,.23,metal);
- vec3 base=pow(clamp(vColor*texel.rgb,0.,1.),vec3(2.0));
+ float rough=uSkin>.5?.83:mix(.81,.23,metal);
+ // For skin, the tone selector is a color-calibrated base, while the
+ // anatomical texture contributes subtle variation. Avoid multiplying two
+ // full warm albedos (the old renderer made all skin tones too dark).
+ vec3 base=uSkin>.5
+   ?pow(clamp(uSkinTone*clamp(texel.rgb/vec3(.72,.51,.38),vec3(.87),vec3(1.16)),0.,1.),vec3(2.0))
+   :pow(clamp(vColor*texel.rgb,0.,1.),vec3(2.0));
  vec3 key=normalize(vec3(-.62,.88,.95));
  vec3 fill=normalize(vec3(.95,.36,.42));
  vec3 top=normalize(vec3(.18,1.0,-.48));
@@ -45,6 +63,7 @@ void main(){
  float nf=max(dot(N,fill),0.);
  float nt=max(dot(N,top),0.);
  float wrap=max(.0,dot(N,key)*.68+.32);
+ if(uSkin>.5)wrap=max(.0,dot(N,key)*.48+.52);
  float ambient=.20+.20*max(N.y,0.);
  float diffuse=(ambient+1.00*wrap+.24*nf+.13*nt);
  vec3 kd=base*(1.-metal*.78)*diffuse;
@@ -66,6 +85,7 @@ void main(){
  outColor=vec4(pow(clamp(mapped,0.,1.),vec3(.84)),vAlpha*texel.a);
 }`;
 function hexRGB(s) { const h = s.replace('#', ''); return [parseInt(h.slice(0, 2), 16) / 255, parseInt(h.slice(2, 4), 16) / 255, parseInt(h.slice(4, 6), 16) / 255]; }
+const SKIN_HEX = { 'sawo-matang': '#B8825F', 'kuning-langsat': '#D5A27E', 'light-beige': '#E2BC9F', 'medium-tan': '#9F6D4F', 'deep-brown': '#6F4837' };
 const kindScale = { bracelet: 1, ring: 1, necklace: 1, 'bag-charm': 1, phone: 1, tablet: 1, macbook: 1, bottle: 1 };
 export class Viewer3D {
     base;
@@ -95,8 +115,6 @@ export class Viewer3D {
         this.base = base;
         this.onDrag = onDrag;
         this.options = { ...opts };
-        if (opts.kind === 'necklace')
-            this.dist = 6.15;
         this.canvas = document.createElement('canvas');
         this.canvas.setAttribute('aria-label', `Model 3D ${opts.kind}. Seret untuk memutar, cubit untuk zoom.`);
         this.canvas.tabIndex = 0;
@@ -133,7 +151,7 @@ export class Viewer3D {
             throw Error('Shader linker gagal');
         this.prog = prog;
         g.useProgram(prog);
-        for (const n of ['uProjection', 'uYaw', 'uPitch', 'uDistance', 'uScale', 'uTint', 'uUseTint', 'uAlpha', 'uOffset', 'uLidAngle', 'uFingerBend', 'uSurface', 'uMap', 'uHasMap', 'uPhoto', 'uPhotoColorize', 'uTintPhoto'])
+        for (const n of ['uProjection', 'uYaw', 'uPitch', 'uDistance', 'uScale', 'uTint', 'uUseTint', 'uAlpha', 'uOffset', 'uLidAngle', 'uFingerBend', 'uSurface', 'uMap', 'uHasMap', 'uPhoto', 'uPhotoColorize', 'uTintPhoto', 'uSkin', 'uSkinTone', 'uNormalMap', 'uHasNormal'])
             this.u[n] = g.getUniformLocation(prog, n);
         g.enable(g.DEPTH_TEST);
         g.depthFunc(g.LEQUAL);
@@ -143,7 +161,7 @@ export class Viewer3D {
     catch (e) {
         this.fail('Grafis perangkat tidak mendukung renderer: ' + String(e));
     } }
-    makeShape(pos, norm, color, indices, index, uv = new Float32Array(pos.length / 3 * 2), texture = null, photo = false, hasAlpha = false) {
+    makeShape(pos, norm, color, indices, index, uv = new Float32Array(pos.length / 3 * 2), texture = null, photo = false, hasAlpha = false, normalTexture = null, skin = false) {
         const g = this.gl, vao = g.createVertexArray();
         g.bindVertexArray(vao);
         const buffers = [];
@@ -160,7 +178,7 @@ export class Viewer3D {
         g.bindBuffer(g.ELEMENT_ARRAY_BUFFER, ib);
         g.bufferData(g.ELEMENT_ARRAY_BUFFER, indices, g.STATIC_DRAW);
         g.bindVertexArray(null);
-        return { vao, count: indices.length, indexType: indices instanceof Uint32Array ? g.UNSIGNED_INT : g.UNSIGNED_SHORT, vbo: buffers, ib, index, texture, photo, hasAlpha };
+        return { vao, count: indices.length, indexType: indices instanceof Uint32Array ? g.UNSIGNED_INT : g.UNSIGNED_SHORT, vbo: buffers, ib, index, texture, normalTexture, skin, photo, hasAlpha };
     }
     async embeddedImages(json, bin) {
         const g = this.gl;
@@ -282,10 +300,14 @@ export class Viewer3D {
                     const ti = mat?.pbrMetallicRoughness?.baseColorTexture?.index;
                     const imgID = ti === undefined ? undefined : json.textures?.[ti]?.source;
                     const tex = imgID === undefined ? null : (imgs[imgID] || null);
+                    const nt = mat?.normalTexture?.index;
+                    const ni = nt === undefined ? undefined : json.textures?.[nt]?.source;
+                    const normalTexture = ni === undefined ? null : (imgs[ni] || null);
+                    const isSkin = (kind === 'bracelet' || kind === 'ring' || kind === 'necklace') && idx === 0;
                     const photo = typeof mat?.name === 'string' && mat.name.startsWith('photo_projected_');
                     const alphaMode = mat?.alphaMode === 'BLEND' || mat?.alphaMode === 'MASK';
                     const normals = this.smoothNormals(po, ii);
-                    this.shapes.push(this.makeShape(po, normals, colors, ii, idx++, uv, tex, photo, alphaMode));
+                    this.shapes.push(this.makeShape(po, normals, colors, ii, idx++, uv, tex, photo, alphaMode, normalTexture, isSkin));
                 }
             }
             this.fallback.textContent = 'Model 3D siap';
@@ -311,7 +333,7 @@ export class Viewer3D {
         this.overlayRebuild();
         this.draw();
     } }
-    reset() { this.yaw = .15; this.pitch = -.11; this.dist = this.options.kind === 'necklace' ? 6.15 : 5.5; this.draw(); }
+    reset() { this.yaw = .15; this.pitch = -.11; this.dist = 5.5; this.draw(); }
     overlayRebuild() {
         if (!this.gl)
             return;
@@ -329,10 +351,10 @@ export class Viewer3D {
             z = .42;
         }
         if (scene === 'ring') {
-            const pos = [[-.16, .32, .24], [.57, .80, -.12], [.82, .60, -.43], [.90, .30, -.56], [.78, 0, -.64]][Math.max(0, Math.min(4, o.finger))];
+            const pos = [[-1.02, .37], [-.49, 1.1], [-.18, 1.23], [.14, 1.3], [.45, 1.07]][Math.max(0, Math.min(4, o.finger))];
             x = pos[0];
             y = pos[1];
-            z = pos[2];
+            z = .34;
         }
         if (scene === 'necklace') {
             x = (o.placement - 50) / 100 * .62;
@@ -436,30 +458,40 @@ export class Viewer3D {
             g.uniform1f(this.u.uLidAngle, 0);
             g.uniform1f(this.u.uFingerBend, 0);
             if (kind === 'ring' && s.index >= this.shapes.length - 2) {
-                const finger = [[-.16, .32, .10], [.57, .80, -.21], [.82, .60, -.52], [.90, .30, -.66], [.78, 0, -.77]][Math.max(0, Math.min(4, this.options.finger))];
-                g.uniform3f(this.u.uOffset, finger[0] - .82, finger[1] - .60, finger[2] + .52);
+                const finger = [[-1.04, .12], [-.53, 1.10], [-.19, 1.10], [.15, 1.14], [.48, 1.03]][Math.max(0, Math.min(4, this.options.finger))];
+                g.uniform3f(this.u.uOffset, finger[0] + .19, finger[1] - 1.10, 0);
             }
             if (kind === 'macbook' && s.index >= this.shapes.length - 3 && s.index < this.shapes.length - 1)
                 g.uniform1f(this.u.uLidAngle, (this.options.pose - 50) / 100 * .72);
             // Hand poses are baked into the procedural mesh; true skeletal rigging is a future production task.
-            if (kind === 'phone' && (s.index === 0 || s.index === 1 || s.index === this.shapes.length - 1)) {
+            const skinRgb = hexRGB(SKIN_HEX[this.options.skinTone] || SKIN_HEX['sawo-matang']);
+            const isSkin = s.skin;
+            if (isSkin) {
+                tint = 1;
+            }
+            else if (kind === 'phone' && (s.index === 0 || s.index === 1 || s.index === this.shapes.length - 1)) {
                 tint = 1;
                 if (s.index === this.shapes.length - 1)
                     alpha = this.options.caseType === 'clear' ? .18 : .94;
             }
-            if (kind === 'bottle' && s.index === 0)
+            else if (kind === 'bottle' && s.index === 0)
                 tint = 1;
-            if (kind === 'bag-charm' && s.index === 0)
+            else if (kind === 'bag-charm' && s.index === 0)
                 tint = 1;
-            if (kind === 'tablet' && s.index === 0)
+            else if (kind === 'tablet' && s.index === 0)
                 tint = 1;
-            if (kind === 'macbook' && (s.index === 0 || s.index === this.shapes.length - 3))
+            else if (kind === 'macbook' && (s.index === 0 || s.index === this.shapes.length - 3))
                 tint = 1;
-            // Jewelry coloration remains intrinsic to the asset in this preview.
-            const finish = kind === 'bag-charm' ? (s.index === 0 ? .02 : .12) : kind === 'bracelet' || kind === 'ring' ? (s.index === 0 ? .01 : .70) : kind === 'necklace' ? (s.index < 2 ? .01 : .70) : kind === 'bottle' ? (s.index === 2 || s.index === 3 ? .12 : .95) : kind === 'phone' || kind === 'tablet' || kind === 'macbook' ? .78 : .18;
+            const finish = kind === 'bag-charm' ? (s.index === 0 ? .02 : .12) : kind === 'bracelet' || kind === 'ring' ? (s.index === 0 ? .02 : .70) : kind === 'necklace' ? (s.index < 2 ? .025 : .70) : kind === 'bottle' ? (s.index === 2 || s.index === 3 ? .12 : .95) : kind === 'phone' || kind === 'tablet' || kind === 'macbook' ? .78 : .18;
             g.uniform1f(this.u.uSurface, finish);
             g.uniform1f(this.u.uHasMap, s.texture ? 1 : 0);
             g.uniform1f(this.u.uPhoto, s.photo ? 1 : 0);
+            g.uniform1f(this.u.uSkin, isSkin ? 1 : 0);
+            g.uniform3f(this.u.uSkinTone, ...skinRgb);
+            g.uniform1f(this.u.uHasNormal, s.normalTexture ? 1 : 0);
+            g.activeTexture(g.TEXTURE1);
+            g.bindTexture(g.TEXTURE_2D, s.normalTexture);
+            g.uniform1i(this.u.uNormalMap, 1);
             const photoTint = kind === 'bottle' && s.photo && this.options.color.toUpperCase() === '#3E4141';
             g.uniform1f(this.u.uPhotoColorize, photoTint ? 1 : 0);
             const tc = hexRGB(this.options.color);
@@ -467,7 +499,7 @@ export class Viewer3D {
             g.activeTexture(g.TEXTURE0);
             g.bindTexture(g.TEXTURE_2D, s.texture);
             g.uniform1i(this.u.uMap, 0);
-            const c = hexRGB(this.options.color);
+            const c = isSkin ? skinRgb : hexRGB(this.options.color);
             g.uniform3f(this.u.uTint, c[0], c[1], c[2]);
             g.uniform1f(this.u.uUseTint, tint);
             g.uniform1f(this.u.uAlpha, alpha);
@@ -493,6 +525,8 @@ export class Viewer3D {
             g.uniform1f(this.u.uAlpha, 1);
             g.uniform1f(this.u.uSurface, .35);
             g.uniform1f(this.u.uHasMap, 0);
+            g.uniform1f(this.u.uSkin, 0);
+            g.uniform1f(this.u.uHasNormal, 0);
             g.uniform1f(this.u.uPhoto, 0);
             g.uniform1f(this.u.uPhotoColorize, 0);
             g.bindTexture(g.TEXTURE_2D, null);

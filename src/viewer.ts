@@ -2,7 +2,7 @@
  * Production migration target: Three.js + React Three Fiber, documented in /System.
  * Renderer only draws when dirty; no unnecessary continuous requestAnimationFrame. */
 export type ModelKind='bracelet'|'ring'|'necklace'|'bag-charm'|'phone'|'tablet'|'macbook'|'bottle';
-export interface ViewerOptions {kind:ModelKind;deviceModel:string;color:string;ornament:string;placement:number;scale:number;rotation:number;finger:number;caseType:string;pose:number;quality:'auto'|'low'|'high'}
+export interface ViewerOptions {kind:ModelKind;deviceModel:string;color:string;skinTone:'sawo-matang'|'kuning-langsat'|'light-beige'|'medium-tan'|'deep-brown';ornament:string;placement:number;scale:number;rotation:number;finger:number;caseType:string;pose:number;quality:'auto'|'low'|'high'}
 const VERT=`#version 300 es
 precision highp float;
 layout(location=0) in vec3 aPosition;layout(location=1) in vec3 aNormal;layout(location=2) in vec4 aColor;layout(location=3) in vec2 aUV;
@@ -24,6 +24,7 @@ in vec3 vColor;
 in vec3 vPos;
 in float vAlpha;in vec2 vUV;
 uniform float uSurface;uniform sampler2D uMap;uniform float uHasMap;uniform float uPhoto;uniform float uPhotoColorize;uniform vec3 uTintPhoto;
+uniform float uSkin;uniform vec3 uSkinTone;uniform sampler2D uNormalMap;uniform float uHasNormal;
 out vec4 outColor;
 
 // Analytic studio key/fill. Retains one shader, no environment textures,
@@ -32,6 +33,18 @@ void main(){
  vec3 N=normalize(vNormal);
  if(!gl_FrontFacing) N=-N;
  vec4 texel=uHasMap>.5?texture(uMap,vUV):vec4(1.);
+ // Tangent-space skin normals reconstructed from mesh position / UV derivatives.
+ if(uSkin>.5 && uHasNormal>.5){
+    vec3 dpdx=dFdx(vPos), dpdy=dFdy(vPos);
+    vec2 duvdx=dFdx(vUV), duvdy=dFdy(vUV);
+    float determinant=duvdx.x*duvdy.y-duvdx.y*duvdy.x;
+    if(abs(determin)>0.0000001){
+      vec3 T=normalize(dpdx*duvdy.y-dpdy*duvdx.y);
+      vec3 B=normalize(dpdy*duvdx.x-dpdx*duvdy.x);
+      vec3 nMap=texture(uNormalMap,vUV).xyz*2.-1.;
+      N=normalize(N*nMap.z + .30*(T*nMap.x+B*nMap.y));
+    }
+ }
  if(texel.a<.08)discard;
  if(uPhoto>.5){
  vec3 c=texel.rgb;
@@ -41,8 +54,13 @@ void main(){
  outColor=vec4(c,texel.a*vAlpha);return;}
  vec3 V=normalize(-vPos);
  float metal=clamp(uSurface,0.,1.);
- float rough=mix(.81,.23,metal);
- vec3 base=pow(clamp(vColor*texel.rgb,0.,1.),vec3(2.0));
+ float rough=uSkin>.5?.83:mix(.81,.23,metal);
+ // For skin, the tone selector is a color-calibrated base, while the
+ // anatomical texture contributes subtle variation. Avoid multiplying two
+ // full warm albedos (the old renderer made all skin tones too dark).
+ vec3 base=uSkin>.5
+   ?pow(clamp(uSkinTone*clamp(texel.rgb/vec3(.72,.51,.38),vec3(.87),vec3(1.16)),0.,1.),vec3(2.0))
+   :pow(clamp(vColor*texel.rgb,0.,1.),vec3(2.0));
  vec3 key=normalize(vec3(-.62,.88,.95));
  vec3 fill=normalize(vec3(.95,.36,.42));
  vec3 top=normalize(vec3(.18,1.0,-.48));
@@ -50,6 +68,7 @@ void main(){
  float nf=max(dot(N,fill),0.);
  float nt=max(dot(N,top),0.);
  float wrap=max(.0,dot(N,key)*.68+.32);
+ if(uSkin>.5)wrap=max(.0,dot(N,key)*.48+.52);
  float ambient=.20+.20*max(N.y,0.);
  float diffuse=(ambient+1.00*wrap+.24*nf+.13*nt);
  vec3 kd=base*(1.-metal*.78)*diffuse;
@@ -70,8 +89,9 @@ void main(){
  vec3 mapped=linearColor/(linearColor+vec3(.29));
  outColor=vec4(pow(clamp(mapped,0.,1.),vec3(.84)),vAlpha*texel.a);
 }`;
-interface Shape { vao:WebGLVertexArrayObject;count:number;indexType:number;vbo:WebGLBuffer[];ib:WebGLBuffer; index:number;texture:WebGLTexture|null;photo:boolean;hasAlpha:boolean }
+interface Shape { vao:WebGLVertexArrayObject;count:number;indexType:number;vbo:WebGLBuffer[];ib:WebGLBuffer; index:number;texture:WebGLTexture|null;normalTexture:WebGLTexture|null;skin:boolean;photo:boolean;hasAlpha:boolean }
 function hexRGB(s:string):[number,number,number]{const h=s.replace('#','');return [parseInt(h.slice(0,2),16)/255,parseInt(h.slice(2,4),16)/255,parseInt(h.slice(4,6),16)/255]}
+const SKIN_HEX={ 'sawo-matang':'#B8825F','kuning-langsat':'#D5A27E','light-beige':'#E2BC9F','medium-tan':'#9F6D4F','deep-brown':'#6F4837'} as const;
 const kindScale:Record<ModelKind,number>={bracelet:1,ring:1,necklace:1,'bag-charm':1,phone:1,tablet:1,macbook:1,bottle:1};
 export class Viewer3D {
  private canvas:HTMLCanvasElement; private gl:WebGL2RenderingContext|null;private prog:WebGLProgram|null=null;private shapes:Shape[]=[]; private overlay:Shape|null=null;private textures:WebGLTexture[]=[];
@@ -87,13 +107,13 @@ export class Viewer3D {
  }
  private fail(message:string){this.fallback.className='warning';this.fallback.style.position='absolute';this.fallback.style.top='58px';this.fallback.style.left='12px';this.fallback.style.right='12px';this.fallback.style.zIndex='4';this.fallback.textContent=message;this.canvas.style.display='none';if(!this.fallbackImage){this.fallbackImage=document.createElement('img');this.fallbackImage.alt='Pratinjau produk 2D ketika WebGL tidak tersedia';this.fallbackImage.style.cssText='width:100%;height:100%;object-fit:contain;padding:30px';this.canvas.parentElement?.appendChild(this.fallbackImage)}this.fallbackImage.src=`${this.base}assets/previews/${this.options.deviceModel||this.options.kind}.webp`}
  private compile(kind:number,source:string){const g=this.gl!,s=g.createShader(kind)!;g.shaderSource(s,source);g.compileShader(s);if(!g.getShaderParameter(s,g.COMPILE_STATUS))throw Error(g.getShaderInfoLog(s)||'Shader gagal');return s}
- private init(){const g=this.gl!;try{const prog=g.createProgram()!;g.attachShader(prog,this.compile(g.VERTEX_SHADER,VERT));g.attachShader(prog,this.compile(g.FRAGMENT_SHADER,FRAG));g.linkProgram(prog);if(!g.getProgramParameter(prog,g.LINK_STATUS))throw Error('Shader linker gagal');this.prog=prog;g.useProgram(prog);for(const n of ['uProjection','uYaw','uPitch','uDistance','uScale','uTint','uUseTint','uAlpha','uOffset','uLidAngle','uFingerBend','uSurface','uMap','uHasMap','uPhoto','uPhotoColorize','uTintPhoto'])this.u[n]=g.getUniformLocation(prog,n);g.enable(g.DEPTH_TEST);g.depthFunc(g.LEQUAL);g.enable(g.CULL_FACE);g.cullFace(g.BACK);}catch(e){this.fail('Grafis perangkat tidak mendukung renderer: '+String(e))}}
- private makeShape(pos:Float32Array,norm:Float32Array,color:Float32Array,indices:Uint16Array|Uint32Array,index:number,uv:Float32Array=new Float32Array(pos.length/3*2),texture:WebGLTexture|null=null,photo=false,hasAlpha=false):Shape{
+ private init(){const g=this.gl!;try{const prog=g.createProgram()!;g.attachShader(prog,this.compile(g.VERTEX_SHADER,VERT));g.attachShader(prog,this.compile(g.FRAGMENT_SHADER,FRAG));g.linkProgram(prog);if(!g.getProgramParameter(prog,g.LINK_STATUS))throw Error('Shader linker gagal');this.prog=prog;g.useProgram(prog);for(const n of ['uProjection','uYaw','uPitch','uDistance','uScale','uTint','uUseTint','uAlpha','uOffset','uLidAngle','uFingerBend','uSurface','uMap','uHasMap','uPhoto','uPhotoColorize','uTintPhoto','uSkin','uSkinTone','uNormalMap','uHasNormal'])this.u[n]=g.getUniformLocation(prog,n);g.enable(g.DEPTH_TEST);g.depthFunc(g.LEQUAL);g.enable(g.CULL_FACE);g.cullFace(g.BACK);}catch(e){this.fail('Grafis perangkat tidak mendukung renderer: '+String(e))}}
+ private makeShape(pos:Float32Array,norm:Float32Array,color:Float32Array,indices:Uint16Array|Uint32Array,index:number,uv:Float32Array=new Float32Array(pos.length/3*2),texture:WebGLTexture|null=null,photo=false,hasAlpha=false,normalTexture:WebGLTexture|null=null,skin=false):Shape{
  const g=this.gl!,vao=g.createVertexArray()!;g.bindVertexArray(vao);const buffers:WebGLBuffer[]=[];
  const arrays:[number,Float32Array,number][]=[[0,pos,3],[1,norm,3],[2,color,4],[3,uv,2]];
  for(const [slot,arr,stride] of arrays){const b=g.createBuffer()!;buffers.push(b);g.bindBuffer(g.ARRAY_BUFFER,b);g.bufferData(g.ARRAY_BUFFER,arr,g.STATIC_DRAW);g.enableVertexAttribArray(slot);g.vertexAttribPointer(slot,stride,g.FLOAT,false,0,0)}
  const ib=g.createBuffer()!;g.bindBuffer(g.ELEMENT_ARRAY_BUFFER,ib);g.bufferData(g.ELEMENT_ARRAY_BUFFER,indices,g.STATIC_DRAW);g.bindVertexArray(null);
- return {vao,count:indices.length,indexType:indices instanceof Uint32Array?g.UNSIGNED_INT:g.UNSIGNED_SHORT,vbo:buffers,ib,index,texture,photo,hasAlpha};}
+ return {vao,count:indices.length,indexType:indices instanceof Uint32Array?g.UNSIGNED_INT:g.UNSIGNED_SHORT,vbo:buffers,ib,index,texture,normalTexture,skin,photo,hasAlpha};}
  private async embeddedImages(json:any,bin:ArrayBuffer):Promise<(WebGLTexture|null)[]>{
    const g=this.gl!;const imgs:(WebGLTexture|null)[]=[];
    for(const im of (json.images||[])){
@@ -128,9 +148,11 @@ export class Viewer3D {
  const ti=mat?.pbrMetallicRoughness?.baseColorTexture?.index;
  const imgID=ti===undefined?undefined:json.textures?.[ti]?.source;
  const tex=imgID===undefined?null:(imgs[imgID]||null);
+ const nt=mat?.normalTexture?.index;const ni=nt===undefined?undefined:json.textures?.[nt]?.source;const normalTexture=ni===undefined?null:(imgs[ni]||null);
+ const isSkin=(kind==='bracelet'||kind==='ring'||kind==='necklace')&&idx===0;
  const photo=typeof mat?.name==='string'&&mat.name.startsWith('photo_projected_');
  const alphaMode=mat?.alphaMode==='BLEND'||mat?.alphaMode==='MASK';
- const normals=this.smoothNormals(po,ii);this.shapes.push(this.makeShape(po,normals,colors,ii,idx++,uv,tex,photo,alphaMode));}}
+ const normals=this.smoothNormals(po,ii);this.shapes.push(this.makeShape(po,normals,colors,ii,idx++,uv,tex,photo,alphaMode,normalTexture,isSkin));}}
  this.fallback.textContent='Model 3D siap';this.overlayRebuild();this.draw();}catch(e){if(current===this.modelLoad&&!this.dead)this.fail('Model 3D belum berhasil dimuat. '+String(e))}}
  update(opts:ViewerOptions){const changed=opts.kind!==this.options.kind||opts.deviceModel!==this.options.deviceModel;this.options={...opts};if(!this.gl){if(this.fallbackImage){const file=opts.deviceModel||opts.kind;this.fallbackImage.src=`${this.base}assets/previews/${file}.webp`;}return}if(changed){this.reset();void this.load(opts.kind)}else{this.overlayRebuild();this.draw()}}
  reset(){this.yaw=.15;this.pitch=-.11;this.dist=this.options.kind==='necklace'?6.15:5.5;this.draw()}
@@ -163,20 +185,24 @@ export class Viewer3D {
   if(kind==='macbook'&&s.index>=this.shapes.length-3&&s.index<this.shapes.length-1)g.uniform1f(this.u.uLidAngle,(this.options.pose-50)/100*.72);
   // Hand poses are baked into the procedural mesh; true skeletal rigging is a future production task.
 
- if(kind==='phone'&&(s.index===0||s.index===1||s.index===this.shapes.length-1)){tint=1;if(s.index===this.shapes.length-1)alpha=this.options.caseType==='clear'?.18:.94}
- if(kind==='bottle'&&s.index===0)tint=1;
- if(kind==='bag-charm'&&s.index===0)tint=1;
- if(kind==='tablet'&&s.index===0)tint=1;
- if(kind==='macbook'&&(s.index===0||s.index===this.shapes.length-3))tint=1;
- // Jewelry coloration remains intrinsic to the asset in this preview.
- const finish=kind==='bag-charm'?(s.index===0?.02:.12):kind==='bracelet'||kind==='ring'?(s.index===0?.01:.70):kind==='necklace'?(s.index<2?.01:.70):kind==='bottle'?(s.index===2||s.index===3?.12:.95):kind==='phone'||kind==='tablet'||kind==='macbook'?.78:.18;g.uniform1f(this.u.uSurface,finish);
+ const skinRgb=hexRGB(SKIN_HEX[this.options.skinTone]||SKIN_HEX['sawo-matang']);
+ const isSkin=s.skin;
+ if(isSkin){tint=1;}
+ else if(kind==='phone'&&(s.index===0||s.index===1||s.index===this.shapes.length-1)){tint=1;if(s.index===this.shapes.length-1)alpha=this.options.caseType==='clear'?.18:.94}
+ else if(kind==='bottle'&&s.index===0)tint=1;
+ else if(kind==='bag-charm'&&s.index===0)tint=1;
+ else if(kind==='tablet'&&s.index===0)tint=1;
+ else if(kind==='macbook'&&(s.index===0||s.index===this.shapes.length-3))tint=1;
+ const finish=kind==='bag-charm'?(s.index===0?.02:.12):kind==='bracelet'||kind==='ring'?(s.index===0?.02:.70):kind==='necklace'?(s.index<2?.025:.70):kind==='bottle'?(s.index===2||s.index===3?.12:.95):kind==='phone'||kind==='tablet'||kind==='macbook'?.78:.18;g.uniform1f(this.u.uSurface,finish);
  g.uniform1f(this.u.uHasMap,s.texture?1:0);g.uniform1f(this.u.uPhoto,s.photo?1:0);
+ g.uniform1f(this.u.uSkin,isSkin?1:0);g.uniform3f(this.u.uSkinTone,...skinRgb);
+ g.uniform1f(this.u.uHasNormal,s.normalTexture?1:0);g.activeTexture(g.TEXTURE1);g.bindTexture(g.TEXTURE_2D,s.normalTexture);g.uniform1i(this.u.uNormalMap,1);
  const photoTint=kind==='bottle'&&s.photo&&this.options.color.toUpperCase()==='#3E4141';
  g.uniform1f(this.u.uPhotoColorize,photoTint?1:0);
  const tc=hexRGB(this.options.color);g.uniform3f(this.u.uTintPhoto,tc[0],tc[1],tc[2]);
  g.activeTexture(g.TEXTURE0);g.bindTexture(g.TEXTURE_2D,s.texture);g.uniform1i(this.u.uMap,0);
- const c=hexRGB(this.options.color);g.uniform3f(this.u.uTint,c[0],c[1],c[2]);g.uniform1f(this.u.uUseTint,tint);g.uniform1f(this.u.uAlpha,alpha);g.bindVertexArray(s.vao);if(alpha<1||s.hasAlpha){g.enable(g.BLEND);g.blendFunc(g.SRC_ALPHA,g.ONE_MINUS_SRC_ALPHA);g.depthMask(false)}else{g.disable(g.BLEND);g.depthMask(true)}g.drawElements(g.TRIANGLES,s.count,s.indexType,0)}
- if(this.overlay){g.uniform3f(this.u.uOffset,0,0,0);g.uniform1f(this.u.uLidAngle,0);g.uniform1f(this.u.uFingerBend,0);g.disable(g.BLEND);g.depthMask(true);g.uniform1f(this.u.uUseTint,0);g.uniform1f(this.u.uAlpha,1);g.uniform1f(this.u.uSurface,.35);g.uniform1f(this.u.uHasMap,0);g.uniform1f(this.u.uPhoto,0);g.uniform1f(this.u.uPhotoColorize,0);g.bindTexture(g.TEXTURE_2D,null);g.bindVertexArray(this.overlay.vao);g.disable(g.CULL_FACE);g.drawElements(g.TRIANGLES,this.overlay.count,this.overlay.indexType,0);g.enable(g.CULL_FACE)}g.bindVertexArray(null)}
+ const c=isSkin?skinRgb:hexRGB(this.options.color);g.uniform3f(this.u.uTint,c[0],c[1],c[2]);g.uniform1f(this.u.uUseTint,tint);g.uniform1f(this.u.uAlpha,alpha);g.bindVertexArray(s.vao);if(alpha<1||s.hasAlpha){g.enable(g.BLEND);g.blendFunc(g.SRC_ALPHA,g.ONE_MINUS_SRC_ALPHA);g.depthMask(false)}else{g.disable(g.BLEND);g.depthMask(true)}g.drawElements(g.TRIANGLES,s.count,s.indexType,0)}
+ if(this.overlay){g.uniform3f(this.u.uOffset,0,0,0);g.uniform1f(this.u.uLidAngle,0);g.uniform1f(this.u.uFingerBend,0);g.disable(g.BLEND);g.depthMask(true);g.uniform1f(this.u.uUseTint,0);g.uniform1f(this.u.uAlpha,1);g.uniform1f(this.u.uSurface,.35);g.uniform1f(this.u.uHasMap,0);g.uniform1f(this.u.uSkin,0);g.uniform1f(this.u.uHasNormal,0);g.uniform1f(this.u.uPhoto,0);g.uniform1f(this.u.uPhotoColorize,0);g.bindTexture(g.TEXTURE_2D,null);g.bindVertexArray(this.overlay.vao);g.disable(g.CULL_FACE);g.drawElements(g.TRIANGLES,this.overlay.count,this.overlay.indexType,0);g.enable(g.CULL_FACE)}g.bindVertexArray(null)}
  private bind(){this.canvas.addEventListener('pointerdown',e=>{this.pointer.set(e.pointerId,{x:e.clientX,y:e.clientY});this.canvas.setPointerCapture(e.pointerId)});this.canvas.addEventListener('pointermove',e=>{const old=this.pointer.get(e.pointerId);if(!old)return;this.pointer.set(e.pointerId,{x:e.clientX,y:e.clientY});if(this.pointer.size>1){const ps=[...this.pointer.values()];const d=Math.hypot(ps[0].x-ps[1].x,ps[0].y-ps[1].y);if(this.pinch)this.dist=Math.max(3.5,Math.min(9,this.dist-(d-this.pinch)*.015));this.pinch=d}else{const dx=e.clientX-old.x,dy=e.clientY-old.y;if(e.shiftKey){this.onDrag(Math.max(0,Math.min(100,this.options.placement+dx*.35)))}else{this.yaw+=dx*.009;this.pitch=Math.max(-.7,Math.min(.7,this.pitch+dy*.007))}}this.draw()});const stop=(e:PointerEvent)=>{this.pointer.delete(e.pointerId);if(this.pointer.size<2)this.pinch=0};this.canvas.addEventListener('pointerup',stop);this.canvas.addEventListener('pointercancel',stop);this.canvas.addEventListener('wheel',e=>{e.preventDefault();this.dist=Math.max(3.5,Math.min(9,this.dist+e.deltaY*.006));this.draw()},{passive:false});this.canvas.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')this.yaw-=.16;if(e.key==='ArrowRight')this.yaw+=.16;if(e.key==='ArrowUp')this.dist=Math.max(3.5,this.dist-.3);if(e.key==='ArrowDown')this.dist=Math.min(9,this.dist+.3);this.draw()});this.canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.fail('Konteks grafis terputus. Muat ulang halaman untuk mencoba lagi.')});document.addEventListener('visibilitychange',()=>{this.visible=!document.hidden;if(this.visible)this.draw()})}
  screenshot(){try{return this.canvas.toDataURL('image/png')}catch{return ''}}
  dispose(){this.dead=true;this.modelLoad++;this.resizeObserver?.disconnect();if(this.gl){this.shapes.forEach(s=>this.disposeShape(s));this.textures.forEach(t=>this.gl!.deleteTexture(t));if(this.overlay)this.disposeShape(this.overlay);if(this.prog)this.gl.deleteProgram(this.prog)}this.canvas.remove();this.fallback.remove();this.fallbackImage?.remove()}
