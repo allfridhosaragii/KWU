@@ -29,8 +29,18 @@ def refine(name:str):
     displacement=np.linalg.norm(improved.vertices-before,axis=1)
     extent=np.ptp(before,axis=0)
     maximum=float(displacement.max())
-    if not np.isfinite(improved.vertices).all() or maximum>float(max(extent))*.012:
-        raise RuntimeError(f'{name}: unsafe smoothing displacement {maximum:.5f}')
+    if not np.isfinite(improved.vertices).all():
+        raise RuntimeError(f'{name}: nonfinite geometry')
+    # The current MakeHuman hand has sharper boundary vertices than the V7
+    # local reference. Cap displacement rather than aborting or distorting nails.
+    limit=float(max(extent))*.008
+    if maximum>limit:
+        ratio=limit/maximum
+        improved.vertices=before+(improved.vertices-before)*ratio
+        displacement=np.linalg.norm(improved.vertices-before,axis=1)
+        maximum=float(displacement.max())
+    if maximum>limit*1.0001:
+        raise RuntimeError(f'{name}: smoothing cap violated {maximum:.5f}>{limit:.5f}')
     if improved.faces.shape!=body.faces.shape or improved.visual.kind!='texture':
         raise RuntimeError(f'{name}: topology or UV material changed')
     output=trimesh.Scene()
