@@ -128,8 +128,8 @@ def jewelry_for_hand(name):
         ring=torus(.25,.032,(0,-.90,.18),(192,180,167),axis='y',sections=88,tube_segments=16)
         charm=sphere((.075,.088,.04),(-.15,-.92,.47),(219,185,134),3)
     else:
-        ring=torus(.125,.020,(-.27,1.02,.29),(205,167,103),axis='y',sections=70,tube_segments=14)
-        charm=sphere((.072,.033,.05),(-.27,1.05,.40),(232,222,204),3)
+        ring=torus(.105,.019,(-.16,.32,.10),(205,167,103),axis='y',sections=70,tube_segments=14)
+        charm=sphere((.060,.025,.035),(-.16,.34,.205),(232,222,204),3)
     return [ring,charm]
 
 
@@ -148,11 +148,11 @@ def build():
     base=read_base()
     # Negative X is the character's right hand. Crop before elbows to focus jewelry.
     hand_raw=crop_mesh(base,normal=[-1,0,0],point=[-3.67,0,0])
-    hv,hf=trimesh.remesh.subdivide_loop(hand_raw.vertices,hand_raw.faces,iterations=2)
+    hv,hf=trimesh.remesh.subdivide(hand_raw.vertices,hand_raw.faces)
     hand=align_hand(trimesh.Trimesh(vertices=hv,faces=hf,process=False))
     # Shoulder, collarbone, neck, chin, lips, nose, eyes and skull share source topology.
     bust_raw=crop_mesh(base,normal=[0,1,0],point=[0,4.86,0])
-    bv,bf=trimesh.remesh.subdivide_loop(bust_raw.vertices,bust_raw.faces,iterations=1)
+    bv,bf=trimesh.remesh.subdivide(bust_raw.vertices,bust_raw.faces)
     bust=align_bust(trimesh.Trimesh(vertices=bv,faces=bf,process=False))
     assert len(hand.faces)>900 and len(bust.faces)>1400
     for n in ('bracelet','ring'):save(n,[hand,*jewelry_for_hand(n)])

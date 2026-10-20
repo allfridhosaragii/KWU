@@ -329,10 +329,10 @@ export class Viewer3D {
             z = .42;
         }
         if (scene === 'ring') {
-            const pos = [[-1.02, .37], [-.49, 1.1], [-.18, 1.23], [.14, 1.3], [.45, 1.07]][Math.max(0, Math.min(4, o.finger))];
+            const pos = [[-.16, .32, .24], [.57, .80, -.12], [.82, .60, -.43], [.90, .30, -.56], [.78, 0, -.64]][Math.max(0, Math.min(4, o.finger))];
             x = pos[0];
             y = pos[1];
-            z = .34;
+            z = pos[2];
         }
         if (scene === 'necklace') {
             x = (o.placement - 50) / 100 * .62;
@@ -436,8 +436,8 @@ export class Viewer3D {
             g.uniform1f(this.u.uLidAngle, 0);
             g.uniform1f(this.u.uFingerBend, 0);
             if (kind === 'ring' && s.index >= this.shapes.length - 2) {
-                const finger = [[-1.04, .12], [-.53, 1.10], [-.19, 1.10], [.15, 1.14], [.48, 1.03]][Math.max(0, Math.min(4, this.options.finger))];
-                g.uniform3f(this.u.uOffset, finger[0] + .19, finger[1] - 1.10, 0);
+                const finger = [[-.16, .32, .10], [.57, .80, -.21], [.82, .60, -.52], [.90, .30, -.66], [.78, 0, -.77]][Math.max(0, Math.min(4, this.options.finger))];
+                g.uniform3f(this.u.uOffset, finger[0] + .16, finger[1] - .32, finger[2] - .10);
             }
             if (kind === 'macbook' && s.index >= this.shapes.length - 3 && s.index < this.shapes.length - 1)
                 g.uniform1f(this.u.uLidAngle, (this.options.pose - 50) / 100 * .72);
