@@ -41,7 +41,7 @@ jobs:
           assert "from './turntable.js'" in v
           a=a.replace("from './viewer.js'", f"from './viewer.js?v={stamp}'",1)
           v=v.replace("from './turntable.js'", f"from './turntable.js?v={stamp}'",1)
-          h=re.sub(r'\\?v=[A-Za-z0-9-]+',f'?v={stamp}',h)
+          h=re.sub(r'\?v=[A-Za-z0-9-]+',f'?v={stamp}',h)
           assert f'assets/app.js?v={stamp}' in h
           app.write_text(a)
           viewer.write_text(v)
