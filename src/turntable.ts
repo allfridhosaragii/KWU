@@ -39,7 +39,7 @@ class RetinaStill {
    const t=colors.includes(tone)?tone:'sawo-matang';
    const r=Math.max(0,Math.min(1,Math.round(row)));
    const a=((Math.round(angle)%24)+24)%24;
-   const url=this.base+'assets/turntables/hires/'+model+'/'+t+'/e'+r+'/a'+String(a).padStart(2,'0')+'.webp?v=12';
+   const url=this.base+'assets/turntables/hires/'+model+'/'+t+'/e'+r+'/a'+String(a).padStart(2,'0')+'.webp?v=14';
    if(url===this.lastKey)return;
    this.lastKey=url;this.image.style.opacity='0';
    if(this.timer!==undefined)clearTimeout(this.timer);

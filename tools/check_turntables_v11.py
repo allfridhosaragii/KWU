@@ -5,7 +5,7 @@ import json
 from PIL import Image
 BASE=Path(__file__).resolve().parent.parent/'site/assets/turntables'
 manifest=json.loads((BASE/'manifest.json').read_text(encoding='utf-8'))
-assert manifest['version']==11,manifest['version']
+assert manifest['version']==14,manifest['version']
 assert len(manifest['models'])>=21,('missing legacy device model',len(manifest['models']))
 valid_tones=('sawo-matang','kuning-langsat','light-beige','medium-tan','deep-brown')
 checked=[]
