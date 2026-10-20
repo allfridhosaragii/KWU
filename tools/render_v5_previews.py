@@ -20,6 +20,19 @@ for name in NAMES:
  ren=vtk.vtkRenderer();win=vtk.vtkRenderWindow();win.SetSize(700,700);win.SetOffScreenRendering(True)
  win.AddRenderer(ren);imp.SetRenderWindow(win);imp.Update()
  ren.SetBackground(.974,.964,.946)
+ # The MakeHuman-derived meshes are open at the wrist/bust cut. A flat-cell
+ # preview exaggerates polygon facets; smooth point normals while retaining
+ # the exact model coordinates and original PBR vertex colors.
+ for actor in ren.GetActors():
+  mapper=actor.GetMapper()
+  if not mapper or not mapper.GetInput():continue
+  smooth=vtk.vtkPolyDataNormals()
+  smooth.SetInputData(mapper.GetInput())
+  smooth.ComputePointNormalsOn()
+  smooth.ComputeCellNormalsOff()
+  smooth.SplittingOff()
+  smooth.AutoOrientNormalsOff()
+  mapper.SetInputConnection(smooth.GetOutputPort())
  ren.ResetCamera();cam=ren.GetActiveCamera()
  cam.Azimuth(5 if name=='bag-charm' else 10)
  cam.Elevation(2 if name in ('bag-charm','bottle') else 1)

@@ -93,7 +93,7 @@ def make_chain(mesh):
     p=np.asarray(mesh.vertices)
     tree=cKDTree(p[:,:2]);out=[]
     # A fine cable necklace draped as a continuous U shape.
-    control=np.array([[-.39,.34],[-.42,.05],[-.39,-.20],[-.26,-.57],[0,-.79],[.26,-.57],[.39,-.20],[.42,.05],[.39,.34]])
+    control=np.array([[-.29,-.12],[-.32,-.28],[-.30,-.47],[-.19,-.65],[0,-.79],[.19,-.65],[.30,-.47],[.32,-.28],[.29,-.12]])
     pts=[]
     for i in range(len(control)-1):
         for t in np.linspace(0,1,18,endpoint=False):
@@ -122,11 +122,21 @@ def make_chain(mesh):
     return [chain, pendant]
 
 
-def jewelry_for_hand(name):
+def jewelry_for_hand(name, hand):
     from make_models_v2 import torus,sphere
     if name=='bracelet':
-        ring=torus(.25,.032,(0,-.90,.18),(192,180,167),axis='y',sections=88,tube_segments=16)
-        charm=sphere((.075,.088,.04),(-.15,-.92,.47),(219,185,134),3)
+        # Approximate bracelet around the anatomical wrist section.
+        # Fit the bracelet to the actual mesh circumference at wrist height.
+        hv=np.asarray(hand.vertices);by=-.89
+        section=hv[np.abs(hv[:,1]-by)<.13]
+        if len(section)>24:
+            cx,cz=np.median(section[:,0]),np.median(section[:,2])
+            rx=max(.18,np.ptp(np.quantile(section[:,0],[.05,.95]))*.5+.07)
+            rz=max(.16,np.ptp(np.quantile(section[:,2],[.05,.95]))*.5+.07)
+        else: cx,cz,rx,rz=0,.17,.30,.24
+        ring=torus(1.,.10,(0,0,0),(200,190,177),axis='y',sections=96,tube_segments=18)
+        ring.apply_scale([rx,.34,rz]);ring.apply_translation([cx,by,cz])
+        charm=sphere((.07,.08,.045),(cx-.12,by-.035,cz+rz+.03),(219,185,134),3)
     else:
         ring=torus(.105,.019,(-.16,.32,.10),(205,167,103),axis='y',sections=70,tube_segments=14)
         charm=sphere((.060,.025,.035),(-.16,.34,.205),(232,222,204),3)
@@ -134,7 +144,8 @@ def jewelry_for_hand(name):
 
 
 def face_eyes():
-    # Conservative, minimal eye inserts at MakeHuman eye-bone anchors.
+    # Use face bone anchors from MakeHuman default rig; these subtle eye surfaces
+    # occupy anatomical sockets rather than the original unfilled eye helper voids.
     from make_models_v2 import sphere
     out=[]
     for x in (-.206,.206):
@@ -158,6 +169,8 @@ def build():
     assert SOURCE.exists(), f'Missing MakeHuman CC0 source: {SOURCE}'
     base=read_base()
     # Negative X is the character's right hand. Crop before elbows to focus jewelry.
+    # Crop normal to the anatomical wrist-to-finger axis, not across the forearm.
+    # A second lateral crop excludes unrelated body geometry.
     wrist=np.array([-4.31,2.45,1.74]);direction=np.array([.19,-.25,.95]);direction/=np.linalg.norm(direction)
     hand_raw=crop_mesh(base,normal=[-1,0,0],point=[-3.45,0,0])
     hand_raw=crop_mesh(hand_raw,normal=direction,point=wrist-.38*direction)
@@ -168,7 +181,7 @@ def build():
     bv,bf=trimesh.remesh.subdivide(bust_raw.vertices,bust_raw.faces)
     bust=align_bust(trimesh.Trimesh(vertices=bv,faces=bf,process=False))
     assert len(hand.faces)>900 and len(bust.faces)>1400
-    for n in ('bracelet','ring'):save(n,[hand,*jewelry_for_hand(n)])
+    for n in ('bracelet','ring'):save(n,[hand,*jewelry_for_hand(n,hand)])
     save('necklace',[bust,*make_chain(bust),*face_eyes()])
 
 if __name__=='__main__':
