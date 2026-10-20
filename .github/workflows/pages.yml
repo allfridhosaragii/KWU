@@ -53,17 +53,19 @@ jobs:
           python tools/photo_previews_v5.py
       - name: Generate updated anatomy previews
         run: KWU_PREVIEW_MODELS=bracelet,ring,necklace xvfb-run -a python tools/render_v5_previews.py
+      - name: Generate 360-degree offline frames for all 21 models
+        run: xvfb-run -a python tools/build_turntables_v10.py
       - name: Source build and static integrity
         run: |
           npm run build
           python tools/check_models_v2.py
       - name: Bust browser caches for 3D viewer V9
-        run: python tools/cache_bust_v9.py
+        run: python tools/cache_bust_v10.py
       - name: Commit generated model data back to main
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add site/models site/assets/previews assets/materials assets/metadata
+          git add site/models site/assets/previews site/assets/turntables assets/materials assets/metadata
           if ! git diff --cached --quiet; then
             git commit -m 'build(3d): export detailed reference-based GLB assets [skip ci]'
             git push origin HEAD:main || echo 'Model generation succeeded, but bot writeback was not permitted.'

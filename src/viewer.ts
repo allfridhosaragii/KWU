@@ -1,3 +1,4 @@
+import {Turntable360} from './turntable.js';
 /* Native WebGL2 / glTF 2.0 viewer used by the no-backend GitHub Pages preview.
  * Production migration target: Three.js + React Three Fiber, documented in /System.
  * Renderer only draws when dirty; no unnecessary continuous requestAnimationFrame. */
@@ -98,43 +99,71 @@ export class Viewer3D {
  private u:Record<string,WebGLUniformLocation|null>={}; private yaw=.15;private pitch=-.11;private dist=5.5;private pointer=new Map<number,{x:number;y:number}>();private pinch=0;
  private resizeObserver:ResizeObserver|null=null;private visible=true;private pending=false;private dead=false;
  private readonly onVisibilityChange=()=>{this.visible=!document.hidden;if(this.visible)this.draw()};
- private fallback:HTMLElement;private fallbackImage:HTMLImageElement|null=null; private options:ViewerOptions; private modelLoad=0;private lastLoading='';
+ private fallback:HTMLElement;private fallbackImage:HTMLImageElement|null=null;private turntable:Turntable360|null=null; private options:ViewerOptions; private modelLoad=0;private lastLoading='';
  constructor(el:HTMLElement, opts:ViewerOptions,private base:string,private onDrag:(n:number)=>void){
-  this.options={...opts};if(opts.kind==='necklace')this.dist=6.15;this.canvas=document.createElement('canvas');this.canvas.setAttribute('aria-label',`Model 3D ${opts.kind}. Seret untuk memutar, cubit untuk zoom.`);this.canvas.tabIndex=0;this.canvas.draggable=false;this.canvas.style.touchAction='none';this.canvas.style.userSelect='none';
+  this.options={...opts};this.canvas=document.createElement('canvas');this.canvas.setAttribute('aria-label',`Model 3D ${opts.kind}. Seret untuk memutar, cubit untuk zoom.`);this.canvas.tabIndex=0;this.canvas.draggable=false;this.canvas.style.touchAction='none';this.canvas.style.userSelect='none';
   this.fallback=document.createElement('div');this.fallback.className='screen-reader';this.fallback.setAttribute('role','status');
-  el.append(this.canvas,this.fallback);const ctx:WebGLContextAttributes={antialias:true,alpha:true,depth:true,powerPreference:'low-power',preserveDrawingBuffer:false};
- this.gl=this.canvas.getContext('webgl2',ctx);
- if(!this.gl){
- const old=this.canvas.getContext('webgl',ctx) || this.canvas.getContext('experimental-webgl',ctx) as WebGLRenderingContext|null;
- const vao=old?.getExtension('OES_vertex_array_object');
- const uint=old?.getExtension('OES_element_index_uint');
- if(old&&vao&&uint){
- const legacy=old as WebGLRenderingContext&{createVertexArray?:()=>WebGLVertexArrayObject|null;bindVertexArray?:(node:WebGLVertexArrayObject|null)=>void;deleteVertexArray?:(node:WebGLVertexArrayObject|null)=>void};
- legacy.createVertexArray=()=>vao.createVertexArrayOES() as unknown as WebGLVertexArrayObject;
- legacy.bindVertexArray=node=>vao.bindVertexArrayOES(node as unknown as WebGLVertexArrayObjectOES|null);
- legacy.deleteVertexArray=node=>vao.deleteVertexArrayOES(node as unknown as WebGLVertexArrayObjectOES|null);
- this.gl=old as unknown as WebGL2RenderingContext;this.glVersion=1;
- }
- }
-  if(!this.gl){this.fail('3D tidak tersedia: WebGL/GPU browser ini tidak aktif. Gunakan Safari atau Chrome terbaru dan pastikan akselerasi grafis aktif.');return}
+  el.append(this.canvas,this.fallback);const contextOptions:WebGLContextAttributes={antialias:true,alpha:true,depth:true,powerPreference:'low-power',preserveDrawingBuffer:false};
+  this.gl=this.canvas.getContext('webgl2',contextOptions);
+  if(!this.gl){
+    const legacy=this.canvas.getContext('webgl',contextOptions) || this.canvas.getContext('experimental-webgl',contextOptions) as WebGLRenderingContext|null;
+    const vao=legacy?.getExtension('OES_vertex_array_object');
+    const uintIndices=legacy?.getExtension('OES_element_index_uint');
+    if(legacy && vao && uintIndices){
+      // Shim VAOs so the GLB pipeline works on older Safari/WebGL1 devices.
+      const g=legacy as WebGLRenderingContext & {createVertexArray?:()=>WebGLVertexArrayObject|null;bindVertexArray?:(v:WebGLVertexArrayObject|null)=>void;deleteVertexArray?:(v:WebGLVertexArrayObject|null)=>void};
+      g.createVertexArray=()=>vao.createVertexArrayOES() as unknown as WebGLVertexArrayObject;
+      g.bindVertexArray=(v)=>vao.bindVertexArrayOES(v as unknown as WebGLVertexArrayObjectOES|null);
+      g.deleteVertexArray=(v)=>vao.deleteVertexArrayOES(v as unknown as WebGLVertexArrayObjectOES|null);
+      this.gl=legacy as unknown as WebGL2RenderingContext;this.glVersion=1;
+    }
+  }
+  if(!this.gl){this.fail('3D tidak tersedia: WebGL/GPU browser ini tidak aktif. Gunakan Safari/Chrome terbaru dan aktifkan akselerasi grafis.');return}
   this.init();if(!this.prog)return;this.bind();this.resizeObserver=new ResizeObserver(()=>this.resize());this.resizeObserver.observe(el);this.resize();void this.load(opts.kind);
  }
- private fail(message:string){this.fallback.className='warning';this.fallback.style.position='absolute';this.fallback.style.top='58px';this.fallback.style.left='12px';this.fallback.style.right='12px';this.fallback.style.zIndex='4';this.fallback.textContent=message;this.canvas.style.display='none';if(!this.fallbackImage){this.fallbackImage=document.createElement('img');this.fallbackImage.alt='Pratinjau produk 2D ketika WebGL tidak tersedia';this.fallbackImage.draggable=false;this.fallbackImage.style.cssText='width:100%;height:100%;object-fit:contain;padding:30px;user-select:none;pointer-events:none;-webkit-user-drag:none';this.canvas.parentElement?.appendChild(this.fallbackImage)}
- const badge=this.canvas.parentElement?.querySelector('.viewer-top .pill');if(badge)badge.textContent='Preview 2D • GPU tidak aktif';
- console.warn('[KWU 3D]',message);this.fallbackImage.src=`${this.base}assets/previews/${this.options.deviceModel||this.options.kind}.webp`}
+ private selection(){
+   const k=this.options.kind;
+   const allow:Record<string,string[]>={phone:['iphone-17','iphone-air','iphone-17-pro','iphone-17-pro-max','iphone-17e'],tablet:['ipad-pro-11','ipad-pro-13','ipad-air-11','ipad-air-13'],macbook:['macbook-air-13','macbook-air-15','macbook-pro-14','macbook-pro-16']};
+   return (allow[k]||[]).includes(this.options.deviceModel)?this.options.deviceModel:k;
+ }
+ private fail(message:string){
+   console.warn('[KWU 3D] Switching to interactive 360° mode:',message);
+   this.useTurntable();
+ }
+ useTurntable(){
+   if(this.dead)return;
+   const parent=this.canvas.parentElement;if(!parent)return;
+   this.canvas.style.display='none';
+   this.fallback.className='screen-reader';
+   if(this.fallbackImage){this.fallbackImage.remove();this.fallbackImage=null;}
+   if(!this.turntable){
+     this.turntable=new Turntable360(parent,this.base,(msg)=>{
+       const badge=parent.querySelector('.viewer-top .pill');if(badge)badge.textContent=msg;
+       this.fallback.textContent=msg;
+     },this.options.skinTone);
+   }
+   void this.turntable.load(this.selection());
+ }
  private compile(kind:number,source:string){const g=this.gl!,s=g.createShader(kind)!;g.shaderSource(s,source);g.compileShader(s);if(!g.getShaderParameter(s,g.COMPILE_STATUS))throw Error(g.getShaderInfoLog(s)||'Shader gagal');return s}
  private shaderForLegacy(code:string,fragment:boolean){
- if(!fragment)return code.replace(/^#version 300 es\s*/,'').replace(/layout\(location=\d+\) in/g,'attribute').replace(/\bout (?=(?:vec[234]|float) )/g,'varying ');
- let output=code.replace(/^#version 300 es\s*/,'');
- const a=output.indexOf(' if(uSkin>.5 && uHasNormal>.5){'),b=output.indexOf(' if(texel.a<.08)discard;');
- if(a>=0&&b>a)output=output.slice(0,a)+output.slice(b);
- return output.replace(/\bin (?=(?:vec[234]|float) )/g,'varying ').replace(/out vec4 outColor;/,'').replace(/\boutColor\b/g,'gl_FragColor').replace(/\btexture\(/g,'texture2D(');
-}
-private init(){const g=this.gl!;try{const prog=g.createProgram()!;
- const vs=this.glVersion===2?VERT:this.shaderForLegacy(VERT,false);
- const fs=this.glVersion===2?FRAG:this.shaderForLegacy(FRAG,true);
- g.attachShader(prog,this.compile(g.VERTEX_SHADER,vs));g.attachShader(prog,this.compile(g.FRAGMENT_SHADER,fs));
- if(this.glVersion===1)for(const [i,name] of ['aPosition','aNormal','aColor','aUV'].entries())g.bindAttribLocation(prog,i,name);
+   if(!fragment){return code.replace(/^#version 300 es\s*/,'')
+     .replace(/layout\(location=\d+\) in/g,'attribute')
+     .replace(/\bout (?=(?:vec[234]|float) )/g,'varying ');}
+   let converted=code.replace(/^#version 300 es\s*/,'');
+   // WebGL1 derivatives require an extension; omit skin bump only in this fallback.
+   const start=converted.indexOf(' if(uSkin>.5 && uHasNormal>.5){');
+   const end=converted.indexOf(' if(texel.a<.08)discard;');
+   if(start>=0&&end>start)converted=converted.slice(0,start)+converted.slice(end);
+   return converted.replace(/\bin (?=(?:vec[234]|float) )/g,'varying ')
+     .replace(/out vec4 outColor;/,'')
+     .replace(/\boutColor\b/g,'gl_FragColor')
+     .replace(/\btexture\(/g,'texture2D(');
+ }
+ private init(){const g=this.gl!;try{const prog=g.createProgram()!;
+ const vertex=this.glVersion===2?VERT:this.shaderForLegacy(VERT,false);
+ const fragment=this.glVersion===2?FRAG:this.shaderForLegacy(FRAG,true);
+ g.attachShader(prog,this.compile(g.VERTEX_SHADER,vertex));g.attachShader(prog,this.compile(g.FRAGMENT_SHADER,fragment));
+ if(this.glVersion===1)for(const [index,name] of ['aPosition','aNormal','aColor','aUV'].entries())g.bindAttribLocation(prog,index,name);
  g.linkProgram(prog);if(!g.getProgramParameter(prog,g.LINK_STATUS))throw Error('Shader linker gagal');this.prog=prog;g.useProgram(prog);for(const n of ['uProjection','uYaw','uPitch','uDistance','uScale','uTint','uUseTint','uAlpha','uOffset','uLidAngle','uFingerBend','uSurface','uMap','uHasMap','uPhoto','uPhotoColorize','uTintPhoto','uSkin','uSkinTone','uNormalMap','uHasNormal'])this.u[n]=g.getUniformLocation(prog,n);g.enable(g.DEPTH_TEST);g.depthFunc(g.LEQUAL);g.enable(g.CULL_FACE);g.cullFace(g.BACK);}catch(e){this.fail('Grafis perangkat tidak mendukung renderer: '+String(e))}}
  private makeShape(pos:Float32Array,norm:Float32Array,color:Float32Array,indices:Uint16Array|Uint32Array,index:number,uv:Float32Array=new Float32Array(pos.length/3*2),texture:WebGLTexture|null=null,photo=false,hasAlpha=false,normalTexture:WebGLTexture|null=null,skin=false):Shape{
  const g=this.gl!,vao=g.createVertexArray()!;g.bindVertexArray(vao);const buffers:WebGLBuffer[]=[];
@@ -143,21 +172,23 @@ private init(){const g=this.gl!;try{const prog=g.createProgram()!;
  const ib=g.createBuffer()!;g.bindBuffer(g.ELEMENT_ARRAY_BUFFER,ib);g.bufferData(g.ELEMENT_ARRAY_BUFFER,indices,g.STATIC_DRAW);g.bindVertexArray(null);
  return {vao,count:indices.length,indexType:indices instanceof Uint32Array?g.UNSIGNED_INT:g.UNSIGNED_SHORT,vbo:buffers,ib,index,texture,normalTexture,skin,photo,hasAlpha};}
  private async decodeImage(blob:Blob):Promise<HTMLImageElement>{
- const url=URL.createObjectURL(blob);
- try{const el=new Image();el.src=url;await el.decode();return el;}
- finally{URL.revokeObjectURL(url)}
+  const url=URL.createObjectURL(blob);
+  try{const im=new Image();im.src=url;await im.decode();return im;}
+  finally{URL.revokeObjectURL(url)}
  }
  private async embeddedImages(json:any,bin:ArrayBuffer):Promise<(WebGLTexture|null)[]>{
    const g=this.gl!;const imgs:(WebGLTexture|null)[]=[];
    for(const im of (json.images||[])){
-     try{
+     try {
       if(im.bufferView===undefined){imgs.push(null);continue}
       const bv=json.bufferViews[im.bufferView];const off=bv.byteOffset||0;
       const data=bin.slice(off,off+bv.byteLength);
       const blob=new Blob([data],{type:im.mimeType||'image/png'});
- let bitmap:ImageBitmap|HTMLImageElement;
- if(typeof createImageBitmap==='function'){try{bitmap=await createImageBitmap(blob,{premultiplyAlpha:'none'});}catch{bitmap=await this.decodeImage(blob);}}
- else bitmap=await this.decodeImage(blob);
+      let bitmap:ImageBitmap|HTMLImageElement;
+      if(typeof createImageBitmap==='function'){
+        try{bitmap=await createImageBitmap(blob,{premultiplyAlpha:'none'});}
+        catch{bitmap=await this.decodeImage(blob);}
+      }else bitmap=await this.decodeImage(blob);
       const tex=g.createTexture();if(!tex){if('close' in bitmap)bitmap.close();imgs.push(null);continue}
       g.bindTexture(g.TEXTURE_2D,tex);g.pixelStorei(g.UNPACK_FLIP_Y_WEBGL,false);
       g.texImage2D(g.TEXTURE_2D,0,g.RGBA,g.RGBA,g.UNSIGNED_BYTE,bitmap);
@@ -167,7 +198,7 @@ private init(){const g=this.gl!;try{const prog=g.createProgram()!;
       g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR_MIPMAP_LINEAR);
       g.generateMipmap(g.TEXTURE_2D);g.bindTexture(g.TEXTURE_2D,null);
       if('close' in bitmap)bitmap.close();imgs.push(tex);this.textures.push(tex);
-     }catch(error){console.warn('[KWU 3D] Satu tekstur gagal, geometri tetap digunakan:',error);imgs.push(null)}
+     }catch(err){console.warn('[KWU 3D] GLB image skipped; geometry remains interactive:',err);imgs.push(null)}
    }
    return imgs;
  }
@@ -210,15 +241,15 @@ private init(){const g=this.gl!;try{const prog=g.createProgram()!;
  const photo=typeof mat?.name==='string'&&mat.name.startsWith('photo_projected_');
  const alphaMode=mat?.alphaMode==='BLEND'||mat?.alphaMode==='MASK';
  const normals=isSkin?this.smoothAnatomicalNormals(po,ii):this.smoothNormals(po,ii);this.shapes.push(this.makeShape(po,normals,colors,ii,idx++,uv,tex,photo,alphaMode,normalTexture,isSkin));}}
- this.fallback.textContent=`3D aktif (${this.glVersion===2?'WebGL 2':'WebGL 1'})`;const badge=this.canvas.parentElement?.querySelector('.viewer-top .pill');if(badge)badge.textContent=`● 3D Aktif (${this.glVersion===2?'WebGL 2':'WebGL 1'})`;this.overlayRebuild();this.draw();}catch(e){if(current===this.modelLoad&&!this.dead)this.fail('Model 3D belum berhasil dimuat. '+String(e))}}
- update(opts:ViewerOptions){const changed=opts.kind!==this.options.kind||opts.deviceModel!==this.options.deviceModel;this.options={...opts};if(!this.gl){if(this.fallbackImage){const file=opts.deviceModel||opts.kind;this.fallbackImage.src=`${this.base}assets/previews/${file}.webp`;}return}if(changed){this.reset();void this.load(opts.kind)}else{this.overlayRebuild();this.draw()}}
- reset(){this.yaw=.15;this.pitch=-.11;this.dist=this.options.kind==='necklace'?6.15:5.5;this.draw()}
- rotate(degrees:number){if(!Number.isFinite(degrees))return;this.yaw+=degrees*Math.PI/180;this.draw()}
- zoom(delta:number){if(!Number.isFinite(delta))return;this.dist=Math.max(2.5,Math.min(11,this.dist+delta));this.draw()}
+ this.fallback.textContent=`3D aktif (${this.glVersion===2?'WebGL 2':'WebGL 1'})`;const pill=this.canvas.parentElement?.querySelector('.viewer-top .pill');if(pill)pill.textContent=`● 3D Aktif (${this.glVersion===2?'WebGL 2':'WebGL 1'})`;this.overlayRebuild();this.draw();}catch(e){if(current===this.modelLoad&&!this.dead)this.fail('Model 3D belum berhasil dimuat. '+String(e))}}
+ update(opts:ViewerOptions){const changed=opts.kind!==this.options.kind||opts.deviceModel!==this.options.deviceModel;this.options={...opts};if(this.turntable){if(changed)void this.turntable.load(this.selection());else void this.turntable.setSkinTone(this.options.skinTone);return;}if(!this.gl){if(this.fallbackImage){const file=opts.deviceModel||opts.kind;this.fallbackImage.src=`${this.base}assets/previews/${file}.webp`;}return}if(changed){this.reset();void this.load(opts.kind)}else{this.overlayRebuild();this.draw()}}
+ reset(){if(this.turntable){this.turntable.reset();return;}this.yaw=.15;this.pitch=-.11;this.dist=this.options.kind==='necklace'?6.15:5.5;this.draw()}
+ rotate(degrees:number){if(this.turntable){this.turntable.rotate(degrees);return;}if(!Number.isFinite(degrees))return;this.yaw+=degrees*Math.PI/180;this.draw()}
+ zoom(delta:number){if(this.turntable){this.turntable.zoom(delta);return;}if(!Number.isFinite(delta))return;this.dist=Math.max(2.5,Math.min(11,this.dist+delta));this.draw()}
  hasInteractive3D(){return Boolean(this.gl&&this.prog&&!this.dead)}
  private overlayRebuild(){if(!this.gl)return;if(this.overlay){this.disposeShape(this.overlay);this.overlay=null}const o=this.options,scene=o.kind;const n=32;let coords:number[]=[];let z=.3,x=(o.placement-50)/100*1.15,y=0;
  if(scene==='bracelet'){x=(o.placement-50)/100*.30;y=-1.10;z=.355}
- if(scene==='ring'){const pos=[[-.16,.32,.24],[.57,.80,-.12],[.82,.60,-.43],[.90,.30,-.56],[.78,0,-.64]][Math.max(0,Math.min(4,o.finger))];x=pos[0];y=pos[1];z=pos[2]}
+ if(scene==='ring'){const pos=[[-1.02,.37],[-.49,1.1],[-.18,1.23],[.14,1.3],[.45,1.07]][Math.max(0,Math.min(4,o.finger))];x=pos[0];y=pos[1];z=.34}
  if(scene==='necklace'){x=(o.placement-50)/100*.50;y=-.86;z=.615}
  if(scene==='bag-charm'){x=.86+(o.placement-50)/100*.32;y=-.70;z=.71}
  if(scene==='phone'){y=(o.placement-50)/100*1.85;z=.18}
@@ -241,7 +272,7 @@ private init(){const g=this.gl!;try{const prog=g.createProgram()!;
  const aspect=this.canvas.width/Math.max(1,this.canvas.height),fov=38*Math.PI/180,near=.1,far=80,f=1/Math.tan(fov/2),p=new Float32Array([f/aspect,0,0,0,0,f,0,0,0,0,(far+near)/(near-far),-1,0,0,(2*far*near)/(near-far),0]);g.uniformMatrix4fv(this.u.uProjection,false,p);g.uniform1f(this.u.uYaw,this.yaw);g.uniform1f(this.u.uPitch,this.pitch+(this.options.pose-50)/400);g.uniform1f(this.u.uDistance,this.dist);g.uniform1f(this.u.uScale,kindScale[this.options.kind]);g.uniform3f(this.u.uOffset,0,0,0);g.uniform1f(this.u.uLidAngle,0);g.uniform1f(this.u.uFingerBend,0);
  for(const s of this.shapes){let tint=0;let alpha=1;const kind=this.options.kind;
   g.uniform3f(this.u.uOffset,0,0,0);g.uniform1f(this.u.uLidAngle,0);g.uniform1f(this.u.uFingerBend,0);
-  if(kind==='ring'&&s.index>=this.shapes.length-2){const finger=[[-.16,.32,.10],[.57,.80,-.21],[.82,.60,-.52],[.90,.30,-.66],[.78,0,-.77]][Math.max(0,Math.min(4,this.options.finger))];g.uniform3f(this.u.uOffset,finger[0]-.82,finger[1]-.60,finger[2]+.52)}
+  if(kind==='ring'&&s.index>=this.shapes.length-2){const finger=[[-1.04,.12],[-.53,1.10],[-.19,1.10],[.15,1.14],[.48,1.03]][Math.max(0,Math.min(4,this.options.finger))];g.uniform3f(this.u.uOffset,finger[0]+.19,finger[1]-1.10,0)}
   if(kind==='macbook'&&s.index>=this.shapes.length-3&&s.index<this.shapes.length-1)g.uniform1f(this.u.uLidAngle,(this.options.pose-50)/100*.72);
   // Hand poses are baked into the procedural mesh; true skeletal rigging is a future production task.
 
@@ -264,6 +295,6 @@ private init(){const g=this.gl!;try{const prog=g.createProgram()!;
  const c=isSkin?skinRgb:hexRGB(this.options.color);g.uniform3f(this.u.uTint,c[0],c[1],c[2]);g.uniform1f(this.u.uUseTint,tint);g.uniform1f(this.u.uAlpha,alpha);g.bindVertexArray(s.vao);if(alpha<1||s.hasAlpha){g.enable(g.BLEND);g.blendFunc(g.SRC_ALPHA,g.ONE_MINUS_SRC_ALPHA);g.depthMask(false)}else{g.disable(g.BLEND);g.depthMask(true)}g.drawElements(g.TRIANGLES,s.count,s.indexType,0)}
  if(this.overlay){g.uniform3f(this.u.uOffset,0,0,0);g.uniform1f(this.u.uLidAngle,0);g.uniform1f(this.u.uFingerBend,0);g.disable(g.BLEND);g.depthMask(true);g.uniform1f(this.u.uUseTint,0);g.uniform1f(this.u.uAlpha,1);g.uniform1f(this.u.uSurface,.35);g.uniform1f(this.u.uHasMap,0);g.uniform1f(this.u.uSkin,0);g.uniform1f(this.u.uHasNormal,0);g.uniform1f(this.u.uPhoto,0);g.uniform1f(this.u.uPhotoColorize,0);g.bindTexture(g.TEXTURE_2D,null);g.bindVertexArray(this.overlay.vao);g.disable(g.CULL_FACE);g.drawElements(g.TRIANGLES,this.overlay.count,this.overlay.indexType,0);g.enable(g.CULL_FACE)}g.bindVertexArray(null)}
  private bind(){this.canvas.addEventListener('dragstart',e=>e.preventDefault());this.canvas.addEventListener('pointerdown',e=>{e.preventDefault();this.pointer.set(e.pointerId,{x:e.clientX,y:e.clientY});this.canvas.setPointerCapture(e.pointerId)});this.canvas.addEventListener('pointermove',e=>{const old=this.pointer.get(e.pointerId);if(!old)return;e.preventDefault();this.pointer.set(e.pointerId,{x:e.clientX,y:e.clientY});if(this.pointer.size>1){const ps=[...this.pointer.values()];const d=Math.hypot(ps[0].x-ps[1].x,ps[0].y-ps[1].y);if(this.pinch)this.dist=Math.max(3.5,Math.min(9,this.dist-(d-this.pinch)*.015));this.pinch=d}else{const dx=e.clientX-old.x,dy=e.clientY-old.y;if(e.shiftKey){this.onDrag(Math.max(0,Math.min(100,this.options.placement+dx*.35)))}else{this.yaw+=dx*.009;this.pitch=Math.max(-.7,Math.min(.7,this.pitch+dy*.007))}}this.draw()});const stop=(e:PointerEvent)=>{this.pointer.delete(e.pointerId);if(this.pointer.size<2)this.pinch=0};this.canvas.addEventListener('pointerup',stop);this.canvas.addEventListener('pointercancel',stop);this.canvas.addEventListener('lostpointercapture',stop);this.canvas.addEventListener('wheel',e=>{e.preventDefault();this.dist=Math.max(3.5,Math.min(9,this.dist+e.deltaY*.006));this.draw()},{passive:false});this.canvas.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')this.yaw-=.16;if(e.key==='ArrowRight')this.yaw+=.16;if(e.key==='ArrowUp')this.dist=Math.max(3.5,this.dist-.3);if(e.key==='ArrowDown')this.dist=Math.min(9,this.dist+.3);this.draw()});this.canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.fallback.textContent='Sambungan grafis terputus, mencoba memulihkan 3D...';this.fallback.className='warning';});this.canvas.addEventListener('webglcontextrestored',()=>{if(this.dead)return;this.shapes=[];this.textures=[];this.overlay=null;this.prog=null;this.init();if(this.prog){this.canvas.style.display='block';this.fallback.className='screen-reader';this.resize();void this.load(this.options.kind);}});document.addEventListener('visibilitychange',this.onVisibilityChange)}
- screenshot(){try{return this.canvas.toDataURL('image/png')}catch{return ''}}
- dispose(){this.dead=true;this.modelLoad++;this.resizeObserver?.disconnect();document.removeEventListener('visibilitychange',this.onVisibilityChange);if(this.gl){this.shapes.forEach(s=>this.disposeShape(s));this.textures.forEach(t=>this.gl!.deleteTexture(t));if(this.overlay)this.disposeShape(this.overlay);if(this.prog)this.gl.deleteProgram(this.prog)}this.canvas.remove();this.fallback.remove();this.fallbackImage?.remove()}
+ screenshot(){if(this.turntable)return this.turntable.screenshot();try{return this.canvas.toDataURL('image/png')}catch{return ''}}
+ dispose(){this.dead=true;this.modelLoad++;this.turntable?.dispose();this.turntable=null;this.resizeObserver?.disconnect();document.removeEventListener('visibilitychange',this.onVisibilityChange);if(this.gl){this.shapes.forEach(s=>this.disposeShape(s));this.textures.forEach(t=>this.gl!.deleteTexture(t));if(this.overlay)this.disposeShape(this.overlay);if(this.prog)this.gl.deleteProgram(this.prog)}this.canvas.remove();this.fallback.remove();this.fallbackImage?.remove()}
 }
