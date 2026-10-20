@@ -2,7 +2,7 @@
   {
     "id": "bracelet",
     "file": "bracelet.glb",
-    "bytes": 2834768,
+    "bytes": 2834792,
     "triangles": 59520,
     "meshes": 3,
     "kind": "bracelet",
@@ -11,7 +11,7 @@
   {
     "id": "ring",
     "file": "ring.glb",
-    "bytes": 2804820,
+    "bytes": 2804840,
     "triangles": 58024,
     "meshes": 3,
     "kind": "ring",
@@ -20,7 +20,7 @@
   {
     "id": "necklace",
     "file": "necklace.glb",
-    "bytes": 5087268,
+    "bytes": 5087296,
     "triangles": 165280,
     "meshes": 9,
     "kind": "necklace",

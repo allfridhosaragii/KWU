@@ -1,5 +1,5 @@
 {
-  "version": 11,
+  "version": 14,
   "models": {
     "bracelet": {
       "name": "bracelet",
@@ -12,7 +12,7 @@
         12
       ],
       "tileSize": 768,
-      "bytes": 6725361,
+      "bytes": 6703777,
       "skinVariants": [
         "sawo-matang",
         "kuning-langsat",
@@ -35,7 +35,7 @@
         12
       ],
       "tileSize": 768,
-      "bytes": 6672742,
+      "bytes": 6646971,
       "skinVariants": [
         "sawo-matang",
         "kuning-langsat",
@@ -58,7 +58,7 @@
         12
       ],
       "tileSize": 768,
-      "bytes": 7304481,
+      "bytes": 7288948,
       "skinVariants": [
         "sawo-matang",
         "kuning-langsat",
@@ -73,254 +73,308 @@
     "bag-charm": {
       "name": "bag-charm",
       "columns": 4,
-      "rows": 8,
+      "rows": 4,
       "frames": 32,
       "azimuthFrames": 16,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 320,
-      "bytes": 58376,
-      "skinVariants": []
+      "tileSize": 640,
+      "bytes": 1609231,
+      "skinVariants": [],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "phone": {
       "name": "phone",
       "columns": 4,
-      "rows": 8,
+      "rows": 4,
       "frames": 32,
       "azimuthFrames": 16,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 320,
-      "bytes": 35416,
-      "skinVariants": []
+      "tileSize": 640,
+      "bytes": 617354,
+      "skinVariants": [],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "tablet": {
       "name": "tablet",
       "columns": 4,
-      "rows": 8,
+      "rows": 4,
       "frames": 32,
       "azimuthFrames": 16,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 320,
-      "bytes": 31728,
-      "skinVariants": []
+      "tileSize": 640,
+      "bytes": 430841,
+      "skinVariants": [],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "macbook": {
       "name": "macbook",
       "columns": 4,
-      "rows": 8,
+      "rows": 4,
       "frames": 32,
       "azimuthFrames": 16,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 320,
-      "bytes": 59168,
-      "skinVariants": []
+      "tileSize": 640,
+      "bytes": 662649,
+      "skinVariants": [],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "bottle": {
       "name": "bottle",
       "columns": 4,
-      "rows": 8,
+      "rows": 4,
       "frames": 32,
       "azimuthFrames": 16,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 320,
-      "bytes": 54434,
-      "skinVariants": []
+      "tileSize": 640,
+      "bytes": 1294887,
+      "skinVariants": [],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "iphone-17": {
       "name": "iphone-17",
       "columns": 4,
-      "rows": 8,
+      "rows": 4,
       "frames": 32,
       "azimuthFrames": 16,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 320,
-      "bytes": 35416,
-      "skinVariants": []
+      "tileSize": 640,
+      "bytes": 617354,
+      "skinVariants": [],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "iphone-air": {
       "name": "iphone-air",
       "columns": 4,
-      "rows": 8,
+      "rows": 4,
       "frames": 32,
       "azimuthFrames": 16,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 320,
-      "bytes": 31696,
-      "skinVariants": []
+      "tileSize": 640,
+      "bytes": 543985,
+      "skinVariants": [],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "iphone-17-pro": {
       "name": "iphone-17-pro",
       "columns": 4,
-      "rows": 8,
+      "rows": 4,
       "frames": 32,
       "azimuthFrames": 16,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 320,
-      "bytes": 46062,
-      "skinVariants": []
+      "tileSize": 640,
+      "bytes": 725660,
+      "skinVariants": [],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "iphone-17-pro-max": {
       "name": "iphone-17-pro-max",
       "columns": 4,
-      "rows": 8,
+      "rows": 4,
       "frames": 32,
       "azimuthFrames": 16,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 320,
-      "bytes": 46476,
-      "skinVariants": []
+      "tileSize": 640,
+      "bytes": 721254,
+      "skinVariants": [],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "iphone-17e": {
       "name": "iphone-17e",
       "columns": 4,
-      "rows": 8,
+      "rows": 4,
       "frames": 32,
       "azimuthFrames": 16,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 320,
-      "bytes": 31242,
-      "skinVariants": []
+      "tileSize": 640,
+      "bytes": 563221,
+      "skinVariants": [],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "ipad-pro-11": {
       "name": "ipad-pro-11",
       "columns": 4,
-      "rows": 8,
+      "rows": 4,
       "frames": 32,
       "azimuthFrames": 16,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 320,
-      "bytes": 31728,
-      "skinVariants": []
+      "tileSize": 640,
+      "bytes": 430841,
+      "skinVariants": [],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "ipad-pro-13": {
       "name": "ipad-pro-13",
       "columns": 4,
-      "rows": 8,
+      "rows": 4,
       "frames": 32,
       "azimuthFrames": 16,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 320,
-      "bytes": 32386,
-      "skinVariants": []
+      "tileSize": 640,
+      "bytes": 433224,
+      "skinVariants": [],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "ipad-air-11": {
       "name": "ipad-air-11",
       "columns": 4,
-      "rows": 8,
+      "rows": 4,
       "frames": 32,
       "azimuthFrames": 16,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 320,
-      "bytes": 35300,
-      "skinVariants": []
+      "tileSize": 640,
+      "bytes": 459996,
+      "skinVariants": [],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "ipad-air-13": {
       "name": "ipad-air-13",
       "columns": 4,
-      "rows": 8,
+      "rows": 4,
       "frames": 32,
       "azimuthFrames": 16,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 320,
-      "bytes": 35888,
-      "skinVariants": []
+      "tileSize": 640,
+      "bytes": 462030,
+      "skinVariants": [],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "macbook-air-13": {
       "name": "macbook-air-13",
       "columns": 4,
-      "rows": 8,
+      "rows": 4,
       "frames": 32,
       "azimuthFrames": 16,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 320,
-      "bytes": 59168,
-      "skinVariants": []
+      "tileSize": 640,
+      "bytes": 662649,
+      "skinVariants": [],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "macbook-air-15": {
       "name": "macbook-air-15",
       "columns": 4,
-      "rows": 8,
+      "rows": 4,
       "frames": 32,
       "azimuthFrames": 16,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 320,
-      "bytes": 58642,
-      "skinVariants": []
+      "tileSize": 640,
+      "bytes": 663654,
+      "skinVariants": [],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "macbook-pro-14": {
       "name": "macbook-pro-14",
       "columns": 4,
-      "rows": 8,
+      "rows": 4,
       "frames": 32,
       "azimuthFrames": 16,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 320,
-      "bytes": 51100,
-      "skinVariants": []
+      "tileSize": 640,
+      "bytes": 609494,
+      "skinVariants": [],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "macbook-pro-16": {
       "name": "macbook-pro-16",
       "columns": 4,
-      "rows": 8,
+      "rows": 4,
       "frames": 32,
       "azimuthFrames": 16,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 320,
-      "bytes": 50948,
-      "skinVariants": []
+      "tileSize": 640,
+      "bytes": 611284,
+      "skinVariants": [],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     }
   }
 }
