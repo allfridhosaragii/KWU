@@ -1,65 +1,74 @@
 {
-  "version": 10,
+  "version": 11,
   "models": {
     "bracelet": {
       "name": "bracelet",
       "columns": 4,
-      "rows": 12,
+      "rows": 6,
       "frames": 48,
       "azimuthFrames": 24,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 400,
-      "bytes": 209360,
+      "tileSize": 768,
+      "bytes": 6725361,
       "skinVariants": [
         "sawo-matang",
         "kuning-langsat",
         "light-beige",
         "medium-tan",
         "deep-brown"
-      ]
+      ],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "ring": {
       "name": "ring",
       "columns": 4,
-      "rows": 12,
+      "rows": 6,
       "frames": 48,
       "azimuthFrames": 24,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 400,
-      "bytes": 195396,
+      "tileSize": 768,
+      "bytes": 6672742,
       "skinVariants": [
         "sawo-matang",
         "kuning-langsat",
         "light-beige",
         "medium-tan",
         "deep-brown"
-      ]
+      ],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "necklace": {
       "name": "necklace",
       "columns": 4,
-      "rows": 12,
+      "rows": 6,
       "frames": 48,
       "azimuthFrames": 24,
       "elevations": [
         -10,
         12
       ],
-      "tileSize": 400,
-      "bytes": 172116,
+      "tileSize": 768,
+      "bytes": 7304481,
       "skinVariants": [
         "sawo-matang",
         "kuning-langsat",
         "light-beige",
         "medium-tan",
         "deep-brown"
-      ]
+      ],
+      "splitElevations": true,
+      "atlasCount": 2,
+      "atlasFormat": "png"
     },
     "bag-charm": {
       "name": "bag-charm",
