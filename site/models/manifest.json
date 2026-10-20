@@ -2,8 +2,8 @@
   {
     "id": "bracelet",
     "file": "bracelet.glb",
-    "bytes": 360528,
-    "triangles": 17792,
+    "bytes": 373328,
+    "triangles": 18432,
     "meshes": 3,
     "kind": "bracelet",
     "status": "high-density-procedural-v5"
