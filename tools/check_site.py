@@ -36,7 +36,9 @@ except Exception as e: errors.append(f'Invalid model catalog: {e}')
 src=(ROOT/'src/app.ts').read_text(encoding='utf8')
 for path in ['/shop','/studio','/cart','/checkout','/help','/about','/login','/register','/account','/owner']:
  if path not in src:errors.append(f'Route absent from source: {path}')
-if 'Tidak ada pembayaran atau akun asli' not in src:errors.append('Missing global demo disclosure')
+if 'DEMO INTERAKTIF KWU' in src:errors.append('Global demo banner must remain removed')
+if 'Mode demonstrasi: tombol di bawah hanya membuat pesanan lokal' not in src:errors.append('Checkout must disclose simulated payments')
+if 'Ini bukan autentikasi sungguhan' not in src:errors.append('Login must disclose local-only authentication')
 if 'DOMPurify' in src:pass
 site_size=sum(p.stat().st_size for p in (ROOT/'site').rglob('*') if p.is_file())
 if site_size>8*1024*1024:errors.append('Static site exceeds 8 MB seed target')

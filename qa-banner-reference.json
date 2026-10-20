@@ -1,0 +1,23 @@
+{
+  "viewports": [
+    {
+      "width": 320,
+      "checks": 30
+    },
+    {
+      "width": 390,
+      "checks": 30
+    },
+    {
+      "width": 768,
+      "checks": 30
+    },
+    {
+      "width": 1440,
+      "checks": 30
+    }
+  ],
+  "failed": [],
+  "webgl2_tested": false,
+  "javascript_errors": []
+}

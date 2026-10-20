@@ -13,22 +13,49 @@ c=cos(uPitch);s=sin(uPitch);p=vec3(p.x,c*p.y-s*p.z,s*p.y+c*p.z);n=vec3(n.x,c*n.y
 p.z-=uDistance;gl_Position=uProjection*vec4(p,1.);
 vNormal=normalize(n);vColor=mix(aColor.rgb,uTint,uUseTint);vPos=p;vAlpha=uAlpha;}`;
 const FRAG = `#version 300 es
-precision highp float;in vec3 vNormal;in vec3 vColor;in vec3 vPos;in float vAlpha;
-uniform float uSurface;out vec4 outColor;
+precision highp float;
+in vec3 vNormal;
+in vec3 vColor;
+in vec3 vPos;
+in float vAlpha;
+uniform float uSurface;
+out vec4 outColor;
+
+// Analytic studio key/fill. Retains one shader, no environment textures,
+// IBL prefilter passes or postprocessing costs on low-end mobile devices.
 void main(){
- vec3 n=normalize(vNormal);if(!gl_FrontFacing)n=-n;
- vec3 key=normalize(vec3(-.65,.95,1.15));vec3 fill=normalize(vec3(.90,.35,.65));
- float nKey=max(dot(n,key),0.);float nFill=max(dot(n,fill),0.);
- float wrap=.28+.72*max(dot(n,key)*.83+.17,0.);
- vec3 diffuse=vec3(.63,.60,.57)*wrap+vec3(.13,.14,.16)*nFill+vec3(.14,.12,.10);
+ vec3 N=normalize(vNormal);
+ if(!gl_FrontFacing) N=-N;
+ vec3 V=normalize(-vPos);
  float metal=clamp(uSurface,0.,1.);
- vec3 h=normalize(key+vec3(0.,0.,1.));
- float gloss=pow(max(dot(n,h),0.),mix(36.,100.,metal));
- float edge=pow(max(0.,1.-abs(dot(n,vec3(0.,0.,1.)))),3.);
- vec3 specular=mix(vec3(.055),mix(vColor,vec3(.94,.94,.92),.65)*.66,metal)*gloss;
- vec3 col=vColor*diffuse+specular+vec3(.032,.031,.03)*edge;
- col=pow(clamp(col,0.,1.),vec3(.96));
- outColor=vec4(col,vAlpha);
+ float rough=mix(.81,.23,metal);
+ vec3 base=pow(clamp(vColor,0.,1.),vec3(2.0));
+ vec3 key=normalize(vec3(-.62,.88,.95));
+ vec3 fill=normalize(vec3(.95,.36,.42));
+ vec3 top=normalize(vec3(.18,1.0,-.48));
+ float nl=max(dot(N,key),0.);
+ float nf=max(dot(N,fill),0.);
+ float nt=max(dot(N,top),0.);
+ float wrap=max(.0,dot(N,key)*.68+.32);
+ float ambient=.20+.20*max(N.y,0.);
+ float diffuse=(ambient+1.00*wrap+.24*nf+.13*nt);
+ vec3 kd=base*(1.-metal*.78)*diffuse;
+ vec3 H=normalize(V+key);
+ vec3 H2=normalize(V+fill);
+ float gloss=mix(13.,105.,1.-rough);
+ float mainSpec=pow(max(dot(N,H),0.),gloss);
+ float fillSpec=pow(max(dot(N,H2),0.),gloss*.42);
+ vec3 F0=mix(vec3(.045),mix(base,vec3(.91,.93,.95),.38),metal);
+ float fresnel=pow(1.-max(dot(N,V),0.),5.);
+ vec3 F=F0+(1.-F0)*fresnel;
+ float specStrength=mix(.18,.95,metal);
+ vec3 spec=F*specStrength*(mainSpec*2.0+fillSpec*.42);
+ float rim=pow(1.-max(dot(N,V),0.),3.);
+ vec3 edge=F*(.08+.16*metal)*rim;
+ // One-step dynamic range compression avoids harsh white clipping.
+ vec3 linearColor=max(vec3(0.),kd+spec+edge);
+ vec3 mapped=linearColor/(linearColor+vec3(.29));
+ outColor=vec4(pow(clamp(mapped,0.,1.),vec3(.84)),vAlpha);
 }`;
 function hexRGB(s) { const h = s.replace('#', ''); return [parseInt(h.slice(0, 2), 16) / 255, parseInt(h.slice(2, 4), 16) / 255, parseInt(h.slice(4, 6), 16) / 255]; }
 const kindScale = { bracelet: 1, ring: 1, necklace: 1, 'bag-charm': 1, phone: 1, tablet: 1, macbook: 1, bottle: 1 };
