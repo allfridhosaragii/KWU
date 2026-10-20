@@ -437,7 +437,7 @@ export class Viewer3D {
             g.uniform1f(this.u.uFingerBend, 0);
             if (kind === 'ring' && s.index >= this.shapes.length - 2) {
                 const finger = [[-.16, .32, .10], [.57, .80, -.21], [.82, .60, -.52], [.90, .30, -.66], [.78, 0, -.77]][Math.max(0, Math.min(4, this.options.finger))];
-                g.uniform3f(this.u.uOffset, finger[0] + .16, finger[1] - .32, finger[2] - .10);
+                g.uniform3f(this.u.uOffset, finger[0] - .82, finger[1] - .60, finger[2] + .52);
             }
             if (kind === 'macbook' && s.index >= this.shapes.length - 3 && s.index < this.shapes.length - 1)
                 g.uniform1f(this.u.uLidAngle, (this.options.pose - 50) / 100 * .72);

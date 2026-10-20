@@ -138,8 +138,8 @@ def jewelry_for_hand(name, hand):
         ring.apply_scale([rx,.34,rz]);ring.apply_translation([cx,by,cz])
         charm=sphere((.07,.08,.045),(cx-.12,by-.035,cz+rz+.03),(219,185,134),3)
     else:
-        ring=torus(.105,.019,(-.16,.32,.10),(205,167,103),axis='y',sections=70,tube_segments=14)
-        charm=sphere((.060,.025,.035),(-.16,.34,.205),(232,222,204),3)
+        ring=torus(.145,.021,(.82,.60,-.52),(205,167,103),axis='y',sections=70,tube_segments=14)
+        charm=sphere((.064,.038,.050),(.82,.62,-.275),(232,222,204),3)
     return [ring,charm]
 
 

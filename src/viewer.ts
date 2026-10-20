@@ -159,7 +159,7 @@ export class Viewer3D {
  const aspect=this.canvas.width/Math.max(1,this.canvas.height),fov=38*Math.PI/180,near=.1,far=80,f=1/Math.tan(fov/2),p=new Float32Array([f/aspect,0,0,0,0,f,0,0,0,0,(far+near)/(near-far),-1,0,0,(2*far*near)/(near-far),0]);g.uniformMatrix4fv(this.u.uProjection,false,p);g.uniform1f(this.u.uYaw,this.yaw);g.uniform1f(this.u.uPitch,this.pitch+(this.options.pose-50)/400);g.uniform1f(this.u.uDistance,this.dist);g.uniform1f(this.u.uScale,kindScale[this.options.kind]);g.uniform3f(this.u.uOffset,0,0,0);g.uniform1f(this.u.uLidAngle,0);g.uniform1f(this.u.uFingerBend,0);
  for(const s of this.shapes){let tint=0;let alpha=1;const kind=this.options.kind;
   g.uniform3f(this.u.uOffset,0,0,0);g.uniform1f(this.u.uLidAngle,0);g.uniform1f(this.u.uFingerBend,0);
-  if(kind==='ring'&&s.index>=this.shapes.length-2){const finger=[[-.16,.32,.10],[.57,.80,-.21],[.82,.60,-.52],[.90,.30,-.66],[.78,0,-.77]][Math.max(0,Math.min(4,this.options.finger))];g.uniform3f(this.u.uOffset,finger[0]+.16,finger[1]-.32,finger[2]-.10)}
+  if(kind==='ring'&&s.index>=this.shapes.length-2){const finger=[[-.16,.32,.10],[.57,.80,-.21],[.82,.60,-.52],[.90,.30,-.66],[.78,0,-.77]][Math.max(0,Math.min(4,this.options.finger))];g.uniform3f(this.u.uOffset,finger[0]-.82,finger[1]-.60,finger[2]+.52)}
   if(kind==='macbook'&&s.index>=this.shapes.length-3&&s.index<this.shapes.length-1)g.uniform1f(this.u.uLidAngle,(this.options.pose-50)/100*.72);
   // Hand poses are baked into the procedural mesh; true skeletal rigging is a future production task.
 
