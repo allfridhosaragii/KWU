@@ -57,6 +57,8 @@ jobs:
         run: |
           npm run build
           python tools/check_models_v2.py
+      - name: Bust browser caches for 3D viewer V9
+        run: python tools/cache_bust_v9.py
       - name: Commit generated model data back to main
         run: |
           git config user.name 'github-actions[bot]'
