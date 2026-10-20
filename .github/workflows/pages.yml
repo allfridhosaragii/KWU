@@ -31,7 +31,7 @@ jobs:
           python-version: '3.12'
       - name: Install build dependencies
         run: |
-          python -m pip install --disable-pip-version-check numpy scipy trimesh pillow scikit-image opencv-python-headless cairosvg
+          python -m pip install --disable-pip-version-check numpy scipy trimesh pillow scikit-image opencv-python-headless cairosvg vtk
           npm install --no-audit --no-fund
       - name: Generate original source models
         run: python tools/make_models_v2.py
@@ -39,12 +39,16 @@ jobs:
         run: python tools/photoreal_projection_v5.py
       - name: Refine hand and neck geometry
         run: python tools/anatomy_refinement_v5.py
+      - name: Replace procedural mannequin with CC0 human anatomy
+        run: python tools/build_anatomical_cc0.py
       - name: Refine device optical details and logo
         run: python tools/device_detail_v5.py
       - name: Update metadata and no-WebGL posters
         run: |
           python tools/update_catalog_v5.py
           python tools/photo_previews_v5.py
+      - name: Generate updated anatomy previews
+        run: KWU_PREVIEW_MODELS=bracelet,ring,necklace xvfb-run -a python tools/render_v5_previews.py
       - name: Source build and static integrity
         run: |
           npm run build

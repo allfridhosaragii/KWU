@@ -10,6 +10,9 @@ NAMES=['bracelet','ring','necklace','bag-charm','bottle','phone','tablet','macbo
  'iphone-17','iphone-air','iphone-17-pro','iphone-17-pro-max','iphone-17e',
  'ipad-pro-11','ipad-pro-13','ipad-air-11','ipad-air-13',
  'macbook-air-13','macbook-air-15','macbook-pro-14','macbook-pro-16']
+import os
+only=os.environ.get("KWU_PREVIEW_MODELS")
+if only:NAMES=[n for n in NAMES if n in set(only.split(","))]
 for name in NAMES:
  src=BASE/'site/models'/f'{name}.glb'
  if not src.exists():continue

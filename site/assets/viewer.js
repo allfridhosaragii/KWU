@@ -95,6 +95,8 @@ export class Viewer3D {
         this.base = base;
         this.onDrag = onDrag;
         this.options = { ...opts };
+        if (opts.kind === 'necklace')
+            this.dist = 6.15;
         this.canvas = document.createElement('canvas');
         this.canvas.setAttribute('aria-label', `Model 3D ${opts.kind}. Seret untuk memutar, cubit untuk zoom.`);
         this.canvas.tabIndex = 0;
@@ -309,7 +311,7 @@ export class Viewer3D {
         this.overlayRebuild();
         this.draw();
     } }
-    reset() { this.yaw = .15; this.pitch = -.11; this.dist = 5.5; this.draw(); }
+    reset() { this.yaw = .15; this.pitch = -.11; this.dist = this.options.kind === 'necklace' ? 6.15 : 5.5; this.draw(); }
     overlayRebuild() {
         if (!this.gl)
             return;

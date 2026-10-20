@@ -79,7 +79,7 @@ export class Viewer3D {
  private resizeObserver:ResizeObserver|null=null;private visible=true;private pending=false;private dead=false;
  private fallback:HTMLElement;private fallbackImage:HTMLImageElement|null=null; private options:ViewerOptions; private modelLoad=0;private lastLoading='';
  constructor(el:HTMLElement, opts:ViewerOptions,private base:string,private onDrag:(n:number)=>void){
-  this.options={...opts};this.canvas=document.createElement('canvas');this.canvas.setAttribute('aria-label',`Model 3D ${opts.kind}. Seret untuk memutar, cubit untuk zoom.`);this.canvas.tabIndex=0;
+  this.options={...opts};if(opts.kind==='necklace')this.dist=6.15;this.canvas=document.createElement('canvas');this.canvas.setAttribute('aria-label',`Model 3D ${opts.kind}. Seret untuk memutar, cubit untuk zoom.`);this.canvas.tabIndex=0;
   this.fallback=document.createElement('div');this.fallback.className='screen-reader';this.fallback.setAttribute('role','status');
   el.append(this.canvas,this.fallback);this.gl=this.canvas.getContext('webgl2',{antialias:true,alpha:true,depth:true,powerPreference:'low-power',preserveDrawingBuffer:false});
   if(!this.gl){this.fail('Mode pratinjau 2D. WebGL 2 tidak tersedia di perangkat ini.');return}
@@ -133,7 +133,7 @@ export class Viewer3D {
  const normals=this.smoothNormals(po,ii);this.shapes.push(this.makeShape(po,normals,colors,ii,idx++,uv,tex,photo,alphaMode));}}
  this.fallback.textContent='Model 3D siap';this.overlayRebuild();this.draw();}catch(e){if(current===this.modelLoad&&!this.dead)this.fail('Model 3D belum berhasil dimuat. '+String(e))}}
  update(opts:ViewerOptions){const changed=opts.kind!==this.options.kind||opts.deviceModel!==this.options.deviceModel;this.options={...opts};if(!this.gl){if(this.fallbackImage){const file=opts.deviceModel||opts.kind;this.fallbackImage.src=`${this.base}assets/previews/${file}.webp`;}return}if(changed){this.reset();void this.load(opts.kind)}else{this.overlayRebuild();this.draw()}}
- reset(){this.yaw=.15;this.pitch=-.11;this.dist=5.5;this.draw()}
+ reset(){this.yaw=.15;this.pitch=-.11;this.dist=this.options.kind==='necklace'?6.15:5.5;this.draw()}
  private overlayRebuild(){if(!this.gl)return;if(this.overlay){this.disposeShape(this.overlay);this.overlay=null}const o=this.options,scene=o.kind;const n=32;let coords:number[]=[];let z=.3,x=(o.placement-50)/100*1.15,y=0;
  if(scene==='bracelet'){x=(o.placement-50)/100*.68;y=-1.05;z=.42}
  if(scene==='ring'){const pos=[[-1.02,.37],[-.49,1.1],[-.18,1.23],[.14,1.3],[.45,1.07]][Math.max(0,Math.min(4,o.finger))];x=pos[0];y=pos[1];z=.34}
