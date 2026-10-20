@@ -26,5 +26,16 @@ jobs:
           python-version: '3.12'
       - name: Install TypeScript compiler
         run: npm install --no-audit --no-fund
+      - name: Complete KWU demo owner forms and controls (V12)
+        run: python tools/feature_completion_v12.py
       - name: Compile and validate static export
         run: npm run build
+      - name: Install browser regression dependencies
+        run: |
+          python -m pip install --disable-pip-version-check playwright
+          python -m playwright install chromium
+      - name: Test all pages and user workflows on phone tablet desktop
+        run: |
+          for width in 320 390 768 1440; do
+            python tests/owner_forms_v12_inline.py "$width"
+          done

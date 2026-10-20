@@ -59,6 +59,8 @@ jobs:
         run: KWU_TURNTABLE_MODELS=bracelet,ring,necklace xvfb-run -a python tools/build_turntables_v11.py
       - name: Verify HD atlases and retina 1536px still frames (V12)
         run: python tools/check_turntables_v11.py
+      - name: Complete KWU demo owner forms and controls (V12)
+        run: python tools/feature_completion_v12.py
       - name: Source build and static integrity
         run: |
           npm run build
@@ -69,7 +71,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add site/models site/assets/previews site/assets/turntables assets/materials assets/metadata
+          git add site/models site/assets/previews site/assets/turntables assets/materials assets/metadata src/app.ts site/assets/app.js
           if ! git diff --cached --quiet; then
             git commit -m 'build(3d): export detailed reference-based GLB assets [skip ci]'
             git push origin HEAD:main || echo 'Model generation succeeded, but bot writeback was not permitted.'
