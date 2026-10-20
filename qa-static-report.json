@@ -4,12 +4,12 @@
     "bracelet: 26520 triangles, 494 KiB",
     "ring: 25880 triangles, 489 KiB",
     "necklace: 3568 triangles, 58 KiB",
-    "bag-charm: 6732 triangles, 106 KiB",
-    "phone: 2672 triangles, 35 KiB",
-    "tablet: 1156 triangles, 19 KiB",
-    "macbook: 16544 triangles, 131 KiB",
-    "bottle: 7728 triangles, 157 KiB"
+    "bag-charm: 8548 triangles, 147 KiB",
+    "phone: 3056 triangles, 45 KiB",
+    "tablet: 1348 triangles, 24 KiB",
+    "macbook: 20192 triangles, 213 KiB",
+    "bottle: 10800 triangles, 200 KiB"
   ],
-  "static_site_bytes": 6345255,
+  "static_site_bytes": 3167837,
   "issues": []
 }

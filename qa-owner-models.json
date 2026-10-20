@@ -1,0 +1,26 @@
+{
+  "viewports": [
+    {
+      "width": 320,
+      "checks": 73,
+      "gpu_available": false
+    },
+    {
+      "width": 390,
+      "checks": 73,
+      "gpu_available": false
+    },
+    {
+      "width": 768,
+      "checks": 73,
+      "gpu_available": false
+    },
+    {
+      "width": 1440,
+      "checks": 71,
+      "gpu_available": false
+    }
+  ],
+  "failures": [],
+  "gpu_render_tested": false
+}

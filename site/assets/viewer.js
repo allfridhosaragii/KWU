@@ -13,13 +13,23 @@ c=cos(uPitch);s=sin(uPitch);p=vec3(p.x,c*p.y-s*p.z,s*p.y+c*p.z);n=vec3(n.x,c*n.y
 p.z-=uDistance;gl_Position=uProjection*vec4(p,1.);
 vNormal=normalize(n);vColor=mix(aColor.rgb,uTint,uUseTint);vPos=p;vAlpha=uAlpha;}`;
 const FRAG = `#version 300 es
-precision highp float;in vec3 vNormal;in vec3 vColor;in vec3 vPos;in float vAlpha;out vec4 outColor;
-void main(){vec3 n=normalize(vNormal);if(!gl_FrontFacing)n=-n;vec3 l=normalize(vec3(-.5,1.0,1.4));
-float lam=max(dot(n,l),0.);float fill=max(dot(n,normalize(vec3(.9,.25,.8))),0.);
-vec3 light=vec3(.52,.48,.46)+vec3(.47,.45,.43)*lam+vec3(.11,.12,.14)*fill;
-vec3 h=normalize(l+vec3(0.,0.,1.));float sp=pow(max(dot(n,h),0.),58.);
-float rim=pow(1.-abs(n.z),3.);vec3 col=vColor*light+vec3(.26,.23,.18)*sp+vec3(.08,.07,.06)*rim;
-col=pow(clamp(col,0.,1.),vec3(.91));outColor=vec4(col,vAlpha);}`;
+precision highp float;in vec3 vNormal;in vec3 vColor;in vec3 vPos;in float vAlpha;
+uniform float uSurface;out vec4 outColor;
+void main(){
+ vec3 n=normalize(vNormal);if(!gl_FrontFacing)n=-n;
+ vec3 key=normalize(vec3(-.65,.95,1.15));vec3 fill=normalize(vec3(.90,.35,.65));
+ float nKey=max(dot(n,key),0.);float nFill=max(dot(n,fill),0.);
+ float wrap=.28+.72*max(dot(n,key)*.83+.17,0.);
+ vec3 diffuse=vec3(.63,.60,.57)*wrap+vec3(.13,.14,.16)*nFill+vec3(.14,.12,.10);
+ float metal=clamp(uSurface,0.,1.);
+ vec3 h=normalize(key+vec3(0.,0.,1.));
+ float gloss=pow(max(dot(n,h),0.),mix(36.,100.,metal));
+ float edge=pow(max(0.,1.-abs(dot(n,vec3(0.,0.,1.)))),3.);
+ vec3 specular=mix(vec3(.055),mix(vColor,vec3(.94,.94,.92),.65)*.66,metal)*gloss;
+ vec3 col=vColor*diffuse+specular+vec3(.032,.031,.03)*edge;
+ col=pow(clamp(col,0.,1.),vec3(.96));
+ outColor=vec4(col,vAlpha);
+}`;
 function hexRGB(s) { const h = s.replace('#', ''); return [parseInt(h.slice(0, 2), 16) / 255, parseInt(h.slice(2, 4), 16) / 255, parseInt(h.slice(4, 6), 16) / 255]; }
 const kindScale = { bracelet: 1, ring: 1, necklace: 1, 'bag-charm': 1, phone: 1, tablet: 1, macbook: 1, bottle: 1 };
 export class Viewer3D {
@@ -56,9 +66,9 @@ export class Viewer3D {
         this.fallback.className = 'screen-reader';
         this.fallback.setAttribute('role', 'status');
         el.append(this.canvas, this.fallback);
-        this.gl = this.canvas.getContext('webgl2', { antialias: true, alpha: true, depth: true, powerPreference: 'low-power', preserveDrawingBuffer: true });
+        this.gl = this.canvas.getContext('webgl2', { antialias: true, alpha: true, depth: true, powerPreference: 'low-power', preserveDrawingBuffer: false });
         if (!this.gl) {
-            this.fail('WebGL 2 tidak tersedia di perangkat ini. Silakan gunakan foto produk.');
+            this.fail('Mode pratinjau 2D. WebGL 2 tidak tersedia di perangkat ini.');
             return;
         }
         this.init();
@@ -85,7 +95,7 @@ export class Viewer3D {
             throw Error('Shader linker gagal');
         this.prog = prog;
         g.useProgram(prog);
-        for (const n of ['uProjection', 'uYaw', 'uPitch', 'uDistance', 'uScale', 'uTint', 'uUseTint', 'uAlpha', 'uOffset', 'uLidAngle', 'uFingerBend'])
+        for (const n of ['uProjection', 'uYaw', 'uPitch', 'uDistance', 'uScale', 'uTint', 'uUseTint', 'uAlpha', 'uOffset', 'uLidAngle', 'uFingerBend', 'uSurface'])
             this.u[n] = g.getUniformLocation(prog, n);
         g.enable(g.DEPTH_TEST);
         g.depthFunc(g.LEQUAL);
@@ -309,7 +319,7 @@ export class Viewer3D {
     }
     resize() { const gl = this.gl; if (!gl || this.dead)
         return; const w = this.canvas.clientWidth, h = this.canvas.clientHeight; if (!w || !h)
-        return; const dpr = this.options.quality === 'low' ? 1 : this.options.quality === 'high' ? Math.min(devicePixelRatio, 2) : Math.min(devicePixelRatio, innerWidth < 768 ? 1.4 : 1.8); const tw = Math.round(w * dpr), th = Math.round(h * dpr); if (this.canvas.width !== tw || this.canvas.height !== th) {
+        return; const dpr = this.options.quality === 'low' ? 1 : this.options.quality === 'high' ? Math.min(devicePixelRatio, innerWidth < 768 ? 1.6 : 2) : Math.min(devicePixelRatio, innerWidth < 768 ? 1.25 : 1.7); const tw = Math.round(w * dpr), th = Math.round(h * dpr); if (this.canvas.width !== tw || this.canvas.height !== th) {
         this.canvas.width = tw;
         this.canvas.height = th;
         gl.viewport(0, 0, tw, th);
@@ -362,6 +372,8 @@ export class Viewer3D {
             if (kind === 'macbook' && (s.index === 0 || s.index === this.shapes.length - 3))
                 tint = 1;
             // Jewelry coloration remains intrinsic to the asset in this preview.
+            const finish = kind === 'bag-charm' ? (s.index === 0 ? .02 : .12) : kind === 'bracelet' || kind === 'ring' ? (s.index === 0 ? .01 : .70) : kind === 'necklace' ? (s.index < 2 ? .01 : .70) : kind === 'bottle' ? (s.index === 2 || s.index === 3 ? .12 : .95) : kind === 'phone' || kind === 'tablet' || kind === 'macbook' ? .78 : .18;
+            g.uniform1f(this.u.uSurface, finish);
             const c = hexRGB(this.options.color);
             g.uniform3f(this.u.uTint, c[0], c[1], c[2]);
             g.uniform1f(this.u.uUseTint, tint);
@@ -386,6 +398,7 @@ export class Viewer3D {
             g.depthMask(true);
             g.uniform1f(this.u.uUseTint, 0);
             g.uniform1f(this.u.uAlpha, 1);
+            g.uniform1f(this.u.uSurface, .35);
             g.bindVertexArray(this.overlay.vao);
             g.disable(g.CULL_FACE);
             g.drawElements(g.TRIANGLES, this.overlay.count, this.overlay.indexType, 0);

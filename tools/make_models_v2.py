@@ -60,26 +60,34 @@ def rounded_rect_outline(w,h,r,segments=9):
    pts.append((cx+r*math.cos(a),cy+r*math.sin(a)))
  return np.asarray(pts,dtype=float)
 
-def rounded_box(w,h,d,r,color,z=0,bevel=.018,seg=8):
- """Fitted side ring + smooth corner strips, color baked into vertices."""
+def rounded_box(w,h,d,r,color,z=0,bevel=.018,seg=10):
+ """Rounded industrial solid with split cap vertices.
+ This removes the cross-shaped / pyramidal shading artifact seen on flat
+ Apple and backpack panels when the cap and bezel shared vertex normals.
+ The cap remains planar, while rounded walls use smooth contiguous rings.
+ """
  inset=max(.003,min(bevel,w/15,h/15,d/4))
- sections=[(z-d/2,1-inset/min(w,h)),(z-d/2+inset,1),(z+d/2-inset,1),(z+d/2,1-inset/min(w,h))]
- coords=[]
- for zz,shrink in sections:
+ side_sections=[(z-d/2,1-inset/min(w,h)),(z-d/2+inset,1),
+                (z+d/2-inset,1),(z+d/2,1-inset/min(w,h))]
+ vertices=[];faces=[];n=None
+ for zz,shrink in side_sections:
   pts=rounded_rect_outline(w*shrink,h*shrink,r*shrink,seg)
-  for x,y in pts: coords.append((x,y,zz))
- n=len(coords)//len(sections);f=[]
- for k in range(len(sections)-1):
+  if n is None:n=len(pts)
+  vertices.extend([(x,y,zz) for x,y in pts])
+ for k in range(len(side_sections)-1):
   for j in range(n):
    a=k*n+j;b=k*n+(j+1)%n;c=(k+1)*n+(j+1)%n;dd=(k+1)*n+j
-   f.extend([(a,b,c),(a,c,dd)])
- for k in [0,len(sections)-1]:
-  center=len(coords);coords.append((0,0,sections[k][0]));offset=k*n
+   faces.extend([(a,b,c),(a,c,dd)])
+ # Duplicate rim for planar end faces. No vertex normal sharing with bevel.
+ for k in (0,len(side_sections)-1):
+  zz,shrink=side_sections[k]
+  base=len(vertices)
+  pts=rounded_rect_outline(w*shrink,h*shrink,r*shrink,seg)
+  vertices.extend([(x,y,zz) for x,y in pts]);center=len(vertices);vertices.append((0,0,zz))
   for j in range(n):
-   a=offset+j;b=offset+(j+1)%n
-   f.append((center,b,a) if k==0 else (center,a,b))
- m=trimesh.Trimesh(vertices=np.asarray(coords),faces=f,process=False)
- # fix normals if needed
+   a=base+j;b=base+(j+1)%n
+   faces.append((center,b,a) if k==0 else (center,a,b))
+ m=trimesh.Trimesh(vertices=np.asarray(vertices,dtype=float),faces=faces,process=False)
  trimesh.repair.fix_normals(m)
  return paint(m,color)
 
@@ -224,6 +232,18 @@ def bag_mesh():
  out[-1].apply_translation((.61,-1.02,0))
  # tiny material stitch dotted line on label
  for k in range(7):out.append(sphere((.009,.006,.005),(.48+k*.042,-1.10,.504),'metal',1))
+ # Front pocket edge stitches and zip pull; small details batched into few meshes.
+ stitch=[]
+ for yy in (-1.33,-.32):
+  for xx in np.linspace(-.82,.82,29):
+   stitch.append(box((.022,.006,.006),(float(xx),yy,.477 if yy==-.32 else .465),'fabricshadow'))
+ if stitch:out.append(trimesh.util.concatenate(stitch))
+ for xx in (-.89,.89):
+  out.append(tube([(xx,-1.24,.473),(xx,-.41,.474)],.008,'fabricshadow',8))
+ # Zipper pull hardware under the pocket lip, visible from a front 3/4 view.
+ out.append(rounded_box(.095,.145,.021,.025,'metal',z=.507,bevel=.005))
+ out[-1].apply_translation((.70,-.295,0))
+ out.append(torus(.045,.011,(.70,-.39,.52),'metal',axis='z',sections=20,tube_segments=8))
  # charm clips two anchors on zipper tips to enable bag-charm
  for xx in (-.79,.78):
   out.append(torus(.060,.015,(xx,-.27,.52),'metal',axis='y',sections=28))
@@ -242,6 +262,9 @@ def bottle_mesh():
  out.append(lathe([(1.30,.305),(1.33,.340),(1.43,.335),(1.55,.32),(1.60,.26),(1.63,.20)],'black',64))
  # loop upright curvilinear in x/y plane, connected cap
  out.append(tube([(-.24,1.57,0),(-.26,1.71,0),(-.20,1.81,0),(0,1.87,0),(.20,1.81,0),(.26,1.71,0),(.24,1.57,0)],.065,'black',16))
+ # Cap gasket and brushed metal neck ring, matching reference contrast.
+ out.append(torus(.316,.012,(0,1.315,0),'fabricshadow',axis='y',sections=64))
+ out.append(torus(.314,.009,(0,1.283,0),'highlight',axis='y',sections=64))
  # metal carabiner clip right like photo, oval U with gate
  loop=[(.28,1.76,.015),(.49,1.87,.015),(.64,1.80,.015),(.82,1.56,.015),(.89,1.35,.015),(.83,1.17,.015),(.65,1.13,.015),(.51,1.20,.015),(.41,1.38,.015)]
  out.append(tube(loop,.034,'metal',18))
