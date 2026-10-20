@@ -1,0 +1,63 @@
+name: Deploy KWU frontend without rebuilding 3D
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pages-frontend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: github-pages-ui
+  cancel-in-progress: false
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compile latest source and validate existing assets
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+      - name: Set unique browser cache keys for this commit
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import os,re
+          stamp='v13-'+os.environ['GITHUB_SHA'][:12]
+          root=Path('site')
+          app=root/'assets/app.js'
+          viewer=root/'assets/viewer.js'
+          html=root/'index.html'
+          a=app.read_text()
+          v=viewer.read_text()
+          h=html.read_text()
+          assert "from './viewer.js'" in a
+          assert "from './turntable.js'" in v
+          a=a.replace("from './viewer.js'", f"from './viewer.js?v={stamp}'",1)
+          v=v.replace("from './turntable.js'", f"from './turntable.js?v={stamp}'",1)
+          h=re.sub(r'\\?v=[A-Za-z0-9-]+',f'?v={stamp}',h)
+          assert f'assets/app.js?v={stamp}' in h
+          app.write_text(a)
+          viewer.write_text(v)
+          html.write_text(h)
+          print('Frontend cache key:', stamp)
+          PY
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+  deploy:
+    needs: frontend
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
+      - id: deployment
+        uses: actions/deploy-pages@v4
