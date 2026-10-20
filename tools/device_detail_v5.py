@@ -20,7 +20,7 @@ OUT=ROOT/'site/models'
 def logo_texture():
  # Brand symbol from Font Awesome Free icons (CC BY 4.0), attributions below.
  import cairosvg,io
- svg=ROOT/'assets/sources/apple-symbol-fontawesome.svg'.read_bytes()
+ svg=(ROOT/'assets/sources/apple-symbol-fontawesome.svg').read_bytes()
  rendered=cairosvg.svg2png(bytestring=svg,output_width=512,output_height=512)
  icon=Image.open(io.BytesIO(rendered)).convert('RGBA')
  alpha=icon.getchannel('A')
