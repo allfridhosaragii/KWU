@@ -22,3 +22,8 @@
 .owner-reference-compare summary{cursor:pointer;font-size:.76rem;font-weight:750;color:var(--ink)}
 .owner-reference-compare img{display:block;margin:13px auto 8px;max-height:360px;width:100%;object-fit:contain;border-radius:10px;background:#fff}
 .owner-reference-compare p{margin:7px 0 0}
+
+/* Viewer V8: no native image dragging or long-press selection over 3D. */
+.studio-page .viewer, .studio-page .viewer canvas { user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; overscroll-behavior:contain; }
+.studio-page .viewer img, .owner-featured-preview img { -webkit-user-drag:none; user-select:none; pointer-events:none; }
+.studio-page .viewer canvas, .owner-featured-preview canvas { touch-action:none; }
