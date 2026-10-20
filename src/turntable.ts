@@ -1,3 +1,49 @@
+
+/** A single, 1536px still frame is decoded only after rotation stops.
+ * The existing 768px turntable sprite remains active throughout drag/zoom.
+ * No huge retina atlas is downloaded on a mobile browser.
+ */
+class RetinaStill {
+ private image:HTMLImageElement;
+ private timer:number|undefined;
+ private lastKey='';
+ private sequence=0;
+ private disposed=false;
+ constructor(host:HTMLElement,private base:string){
+   const image=new Image();image.draggable=false;image.alt='';image.decoding='async';
+   image.setAttribute('aria-hidden','true');
+   image.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none;opacity:0;transition:opacity .11s linear;transform-origin:center center;z-index:1';
+   host.append(image);this.image=image;
+ }
+ display(model:string,tone:string,row:number,angle:number,zoom:number){
+   if(this.disposed)return;
+   this.image.style.transform='scale('+Math.max(.8,Math.min(zoom,2.8)).toFixed(3)+')';
+   if(!['bracelet','ring','necklace'].includes(model))return;
+   const colors=['sawo-matang','kuning-langsat','light-beige','medium-tan','deep-brown'];
+   const t=colors.includes(tone)?tone:'sawo-matang';
+   const r=Math.max(0,Math.min(1,Math.round(row)));
+   const a=((Math.round(angle)%24)+24)%24;
+   const url=this.base+'assets/turntables/hires/'+model+'/'+t+'/e'+r+'/a'+String(a).padStart(2,'0')+'.webp?v=12';
+   if(url===this.lastKey)return;
+   this.lastKey=url;this.image.style.opacity='0';
+   if(this.timer!==undefined)clearTimeout(this.timer);
+   const seq=++this.sequence;
+   this.timer=window.setTimeout(async()=>{
+     this.timer=undefined;
+     try{
+       const candidate=new Image();candidate.decoding='async';candidate.src=url;
+       await candidate.decode();
+       if(this.disposed||seq!==this.sequence||url!==this.lastKey)return;
+       this.image.src=url;this.image.style.opacity='1';
+     }catch{
+       if(seq===this.sequence)this.image.style.opacity='0';
+     }
+   },190);
+ }
+ reset(){if(this.disposed)return;this.sequence++;if(this.timer!==undefined)clearTimeout(this.timer);this.timer=undefined;this.lastKey='';this.image.style.opacity='0';}
+ dispose(){this.reset();this.disposed=true;this.image.remove();}
+}
+
 /** Interactive 360° frame renderer. Rotates offline-rendered GLB views without WebGL.
  *  This is NOT continuous realtime 3D, and is labelled as such in the UI.
  *  The atlas assets are self-hosted on GitHub Pages so they work in in-app browsers.
@@ -8,6 +54,7 @@ const bound=(n:number,low:number,high:number)=>Math.min(high,Math.max(low,n));
 export class Turntable360 {
  readonly element:HTMLDivElement;
  private sprite:HTMLDivElement;
+ private retina:RetinaStill;
  private picture:HTMLImageElement|null=null;
  private meta:TurntableMeta|null=null;
  private azimuth=0;
@@ -29,7 +76,7 @@ export class Turntable360 {
    outer.setAttribute('role','group');outer.setAttribute('aria-label','Pratinjau 360 derajat. Geser ke kiri dan kanan untuk memutar; ke atas atau bawah untuk mengubah sudut. Cubit untuk zoom.');
    outer.style.touchAction='none';outer.style.userSelect='none';
    const sprite=document.createElement('div');sprite.className='kwu-turntable-sprite';outer.append(sprite);
-   this.element=outer;this.sprite=sprite;
+   this.element=outer;this.sprite=sprite;this.retina=new RetinaStill(outer,base);
    host.append(outer);
    outer.addEventListener('dragstart',event=>event.preventDefault());
    outer.addEventListener('pointerdown',e=>{
@@ -58,7 +105,7 @@ export class Turntable360 {
  }
  private distance(){const [a,b]=[...this.pointers.values()];return a&&b?Math.hypot(a.x-b.x,a.y-b.y):0;}
  async load(name:string){
-   this.lastName=name;
+   this.lastName=name;this.retina.reset();
    ++this.atlasSequence;
    this.meta=null;this.currentImg=null;
    this.renderedAtlas='';this.loadingAtlas='';
@@ -142,10 +189,11 @@ export class Turntable360 {
    const yPct=m.rows>1?100*y/(m.rows-1):0;
    this.sprite.style.backgroundPosition=`${xPct.toFixed(4)}% ${yPct.toFixed(4)}%`;
    this.element.dataset.frame=String(elevation*m.azimuthFrames+horizontal);
+   this.retina.display(m.name,this.skinTone,elevation,horizontal,this.magnification);
  }
  async setSkinTone(tone:string){
    if(tone===this.skinTone)return;
-   this.skinTone=tone;
+   this.skinTone=tone;this.retina.reset();
    const m=this.meta;if(!m||!m.skinVariants?.includes(tone))return;
    const row=Math.round(bound(this.pitchRow,0,m.elevations.length-1));
    await this.useAtlas(row);
@@ -160,5 +208,5 @@ export class Turntable360 {
    ctx.drawImage(im,(frame%m.columns)*tile,Math.floor(frame/m.columns)*tile,tile,tile,0,0,tile,tile);
    try{return c.toDataURL('image/png')}catch{return ''}
  }
- dispose(){this.disposed=true;this.atlasSequence++;this.element.remove();this.picture=null;this.meta=null;this.currentImg=null;this.pointers.clear()}
+ dispose(){this.retina.dispose();this.disposed=true;this.atlasSequence++;this.element.remove();this.picture=null;this.meta=null;this.currentImg=null;this.pointers.clear()}
 }

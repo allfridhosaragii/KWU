@@ -57,7 +57,7 @@ jobs:
         run: KWU_PREVIEW_MODELS=bracelet,ring,necklace xvfb-run -a python tools/render_v5_previews.py
       - name: Generate retina 360-degree atlases for jewelry mannequins (V11)
         run: KWU_TURNTABLE_MODELS=bracelet,ring,necklace xvfb-run -a python tools/build_turntables_v11.py
-      - name: Verify HD atlases and preserve legacy device turntables
+      - name: Verify HD atlases and retina 1536px still frames (V12)
         run: python tools/check_turntables_v11.py
       - name: Source build and static integrity
         run: |

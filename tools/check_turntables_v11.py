@@ -29,3 +29,19 @@ for name,meta in manifest['models'].items():
     if not meta.get('splitElevations'):
         assert (BASE/f'{name}.webp').exists(),name
 print('V11 retina atlas integrity: PASS',len(checked),'HD images; legacy models preserved')
+
+
+# V12 progressive retina still images: all skin tones, two elevations and all
+# 24 azimuths must be present and decodable for the three jewelry scenes.
+retina_count=0
+for name in ('bracelet','ring','necklace'):
+    for tone in valid_tones:
+        for row in (0,1):
+            for angle in range(24):
+                path=BASE/'hires'/name/tone/f'e{row}'/f'a{angle:02d}.webp'
+                assert path.exists() and path.stat().st_size>3000,path
+                with Image.open(path) as im:
+                    assert im.size==(1536,1536) and im.format=='WEBP',path
+                    im.verify()
+                retina_count+=1
+print('V12 retina 360 still images: PASS',retina_count,'frames')

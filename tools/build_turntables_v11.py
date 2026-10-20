@@ -9,7 +9,7 @@ from __future__ import annotations
 import os, math, json, time, sys, subprocess
 from pathlib import Path
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 import vtk
 from vtk.util.numpy_support import vtk_to_numpy
 
@@ -151,6 +151,29 @@ def render(name:str)->dict:
             arr=vtk_to_numpy(scalars).reshape(size,size,3)[::-1].copy()
             frame=Image.fromarray(arr,'RGB')
             atlas.paste(frame,((i%sheetCols)*size,(i//sheetCols)*size))
+            # The quick 768px sprite keeps gestures smooth. When the viewer
+            # stops moving, the client requests just ONE 1536px WebP angle.
+            # Avoid a multi-hundred-megapixel full 1536px atlas on Safari.
+            if anatomy:
+                retina=1536
+                window.SetSize(retina,retina)
+                ren.ResetCameraClippingRange();window.Render()
+                snap.Modified();snap.Update()
+                hi_scalars=snap.GetOutput().GetPointData().GetScalars()
+                if hi_scalars is None:raise RuntimeError(f'Empty retina raster for {name} {elev_idx}/{i}')
+                high_rgb=vtk_to_numpy(hi_scalars).reshape(retina,retina,3)[::-1].copy()
+                high_frame=Image.fromarray(high_rgb,'RGB').filter(
+                    ImageFilter.UnsharpMask(radius=.6,percent=40,threshold=4))
+                for skin_tone in SKIN_PALETTE:
+                    out_frame=OUTPUT/'hires'/name/skin_tone/f'e{elev_idx}'/f'a{i:02d}.webp'
+                    out_frame.parent.mkdir(parents=True,exist_ok=True)
+                    variant=high_frame.copy() if skin_tone=='sawo-matang' else skin_variant(high_frame,skin_tone)
+                    variant.save(out_frame,'WEBP',quality=94,method=5)
+                    variant.close()
+                    if out_frame.stat().st_size<3000:raise RuntimeError(f'Invalid retina frame: {out_frame}')
+                high_frame.close()
+                window.SetSize(size,size)
+
         # Keep each atlas < 23MP, safe for Safari and most integrated GPUs.
         assert atlas.width*atlas.height<24_000_000,(name,atlas.size)
         out=OUTPUT/f'{name}--e{elev_idx}.png'
