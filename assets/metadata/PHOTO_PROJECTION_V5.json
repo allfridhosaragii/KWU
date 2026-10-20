@@ -1,0 +1,22 @@
+[
+  {
+    "model": "bag-charm",
+    "size_bytes": 438680,
+    "triangles": 16804,
+    "meshes": 31,
+    "reference": "/mnt/data/IMG_6976.jpeg",
+    "texture_png": "/mnt/data/KWU-v5/assets/materials/bag-charm_reference_front_rgba.png",
+    "front_projection": "photographic texture onto 3d relief",
+    "known_limit": "unobserved side and rear remain inferred, not a 1:1 reconstruction"
+  },
+  {
+    "model": "bottle",
+    "size_bytes": 456084,
+    "triangles": 18864,
+    "meshes": 10,
+    "reference": "/mnt/data/IMG_6977.jpeg",
+    "texture_png": "/mnt/data/KWU-v5/assets/materials/bottle_reference_front_rgba.png",
+    "front_projection": "photographic texture onto 3d relief",
+    "known_limit": "unobserved side and rear remain inferred, not a 1:1 reconstruction"
+  }
+]

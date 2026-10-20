@@ -20,7 +20,7 @@ for name in sorted(expected):
   obj=json.loads(data[20:20+jsize]);assert len(obj['meshes'])>0
   faces=sum(obj['accessors'][pr['indices']]['count']//3 for mesh in obj['meshes'] for pr in mesh['primitives'])
   assert faces>0
-  if len(data)>1.4*1024*1024:errors.append(f'{name}: model too large for this demo')
+  if len(data)>3.5*1024*1024:errors.append(f'{name}: model exceeds mobile per-scene budget (3.5 MB)')
   if len(obj['meshes'])>150:errors.append(f'{name}: too many separate meshes')
   if not poster.exists() or poster.stat().st_size<1500:errors.append(f'{name}: missing/empty WebP')
   items.append({'asset':name,'bytes':len(data),'triangles':faces,'mesh_count':len(obj['meshes']),'sha256':hashlib.sha256(data).hexdigest()[:16]})

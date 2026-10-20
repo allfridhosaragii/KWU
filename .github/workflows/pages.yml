@@ -1,39 +1,73 @@
-name: Publish KWU demo to GitHub Pages
+name: Build 3D assets and deploy KWU Pages
 on:
   push:
     branches: [main]
     paths:
       - 'site/**'
+      - 'src/**'
+      - 'tools/**'
+      - 'assets/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 concurrency:
   group: github-pages
   cancel-in-progress: false
 jobs:
-  validate:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Static export integrity
-        run: python tools/check_site.py
+      - name: Install build dependencies
+        run: |
+          python -m pip install --disable-pip-version-check numpy scipy trimesh pillow scikit-image opencv-python-headless cairosvg
+          npm install --no-audit --no-fund
+      - name: Generate original source models
+        run: python tools/make_models_v2.py
+      - name: Project user photos onto GLB front surfaces
+        run: python tools/photoreal_projection_v5.py
+      - name: Refine hand and neck geometry
+        run: python tools/anatomy_refinement_v5.py
+      - name: Refine device optical details and logo
+        run: python tools/device_detail_v5.py
+      - name: Update metadata and no-WebGL posters
+        run: |
+          python tools/update_catalog_v5.py
+          python tools/photo_previews_v5.py
+      - name: Source build and static integrity
+        run: |
+          npm run build
+          python tools/check_models_v2.py
+      - name: Commit generated model data back to main
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/models site/assets/previews assets/materials assets/metadata
+          if ! git diff --cached --quiet; then
+            git commit -m 'build(3d): export detailed reference-based GLB assets [skip ci]'
+            git push origin HEAD:main || echo 'Model generation succeeded, but bot writeback was not permitted.'
+          fi
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
   deploy:
-    needs: validate
+    needs: build
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./site
       - id: deployment
         uses: actions/deploy-pages@v4

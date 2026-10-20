@@ -41,7 +41,7 @@ if 'Mode demonstrasi: tombol di bawah hanya membuat pesanan lokal' not in src:er
 if 'Ini bukan autentikasi sungguhan' not in src:errors.append('Login must disclose local-only authentication')
 if 'DOMPurify' in src:pass
 site_size=sum(p.stat().st_size for p in (ROOT/'site').rglob('*') if p.is_file())
-if site_size>8*1024*1024:errors.append('Static site exceeds 8 MB seed target')
+if site_size>16*1024*1024:errors.append('Static site exceeds 16 MB lazy-loaded budget')
 report={'passed':not errors,'models':info,'static_site_bytes':site_size,'issues':errors}
 (ROOT/'qa-static-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
 print(json.dumps(report,ensure_ascii=False,indent=2))

@@ -78,3 +78,7 @@ Model procedurally authored sudah diperluas menjadi 21 GLB utama dan 21 poster W
 **Penting:** model 3D masih interpretasi prosedural dan **bukan replika fotorealistik 1:1**. Detail resmi dan keterbatasan ada dalam [`3D Asset Research/00_STATUS_RILIS.md`](3D%20Asset%20Research/00_STATUS_RILIS.md). GitHub Pages tetap demo statis tanpa backend atau pembayaran asli.
 
 QA: `python tools/check_site.py`, `python tools/check_models_v2.py`, `python tests/run_matrix.py`, `python tests/model_variants_e2e.py` (opsi terakhir memerlukan Playwright/Chromium).
+
+## 3D Reference-based Asset Upgrade V5
+
+V5 enables embedded GLB image textures and photographs projected onto 3D relief for the provided backpack and stainless bottle references. It adds enhanced Apple device details and more detailed (but not scanned) hand/neck geometry. See `3D Asset Research/04_QA/REALISM_AUDIT_V5.md` for exact fidelity limits, licenses and testing scope. This version is still a static GitHub Pages demonstration, not a real commerce backend.

@@ -1,9 +1,9 @@
 const VERT = `#version 300 es
 precision highp float;
-layout(location=0) in vec3 aPosition;layout(location=1) in vec3 aNormal;layout(location=2) in vec4 aColor;
+layout(location=0) in vec3 aPosition;layout(location=1) in vec3 aNormal;layout(location=2) in vec4 aColor;layout(location=3) in vec2 aUV;
 uniform mat4 uProjection;uniform float uYaw,uPitch,uDistance,uScale;
 uniform vec3 uTint;uniform float uUseTint;uniform float uAlpha;uniform vec3 uOffset;uniform float uLidAngle;uniform float uFingerBend;
-out vec3 vNormal;out vec3 vColor;out vec3 vPos;out float vAlpha;
+out vec3 vNormal;out vec3 vColor;out vec3 vPos;out float vAlpha;out vec2 vUV;
 void main(){vec3 p=(aPosition+uOffset)*uScale;vec3 n=aNormal;
 if(uLidAngle!=0.){float cy=cos(uLidAngle),sy=sin(uLidAngle);float py=p.y,pz=p.z-.13;p.y=cy*py-sy*pz;p.z=sy*py+cy*pz+.13;}
 if(uFingerBend!=0. && p.y>.55){p.z+=uFingerBend*pow(max(0.,p.y-.55),2.);}
@@ -11,14 +11,14 @@ if(uFingerBend!=0. && p.y>.55){p.z+=uFingerBend*pow(max(0.,p.y-.55),2.);}
 float c=cos(uYaw),s=sin(uYaw);p=vec3(c*p.x+s*p.z,p.y,-s*p.x+c*p.z);n=vec3(c*n.x+s*n.z,n.y,-s*n.x+c*n.z);
 c=cos(uPitch);s=sin(uPitch);p=vec3(p.x,c*p.y-s*p.z,s*p.y+c*p.z);n=vec3(n.x,c*n.y-s*n.z,s*n.y+c*n.z);
 p.z-=uDistance;gl_Position=uProjection*vec4(p,1.);
-vNormal=normalize(n);vColor=mix(aColor.rgb,uTint,uUseTint);vPos=p;vAlpha=uAlpha;}`;
+vNormal=normalize(n);vColor=mix(aColor.rgb,uTint,uUseTint);vPos=p;vAlpha=uAlpha;vUV=aUV;}`;
 const FRAG = `#version 300 es
 precision highp float;
 in vec3 vNormal;
 in vec3 vColor;
 in vec3 vPos;
-in float vAlpha;
-uniform float uSurface;
+in float vAlpha;in vec2 vUV;
+uniform float uSurface;uniform sampler2D uMap;uniform float uHasMap;uniform float uPhoto;uniform float uPhotoColorize;uniform vec3 uTintPhoto;
 out vec4 outColor;
 
 // Analytic studio key/fill. Retains one shader, no environment textures,
@@ -26,10 +26,18 @@ out vec4 outColor;
 void main(){
  vec3 N=normalize(vNormal);
  if(!gl_FrontFacing) N=-N;
+ vec4 texel=uHasMap>.5?texture(uMap,vUV):vec4(1.);
+ if(texel.a<.08)discard;
+ if(uPhoto>.5){
+ vec3 c=texel.rgb;
+ if(uPhotoColorize>.5){float l=dot(c,vec3(.2126,.7152,.0722));
+   c=clamp((.26+l*.75)*uTintPhoto*1.6+vec3(.07)*pow(l,7.),0.,1.);
+ }
+ outColor=vec4(c,texel.a*vAlpha);return;}
  vec3 V=normalize(-vPos);
  float metal=clamp(uSurface,0.,1.);
  float rough=mix(.81,.23,metal);
- vec3 base=pow(clamp(vColor,0.,1.),vec3(2.0));
+ vec3 base=pow(clamp(vColor*texel.rgb,0.,1.),vec3(2.0));
  vec3 key=normalize(vec3(-.62,.88,.95));
  vec3 fill=normalize(vec3(.95,.36,.42));
  vec3 top=normalize(vec3(.18,1.0,-.48));
@@ -55,7 +63,7 @@ void main(){
  // One-step dynamic range compression avoids harsh white clipping.
  vec3 linearColor=max(vec3(0.),kd+spec+edge);
  vec3 mapped=linearColor/(linearColor+vec3(.29));
- outColor=vec4(pow(clamp(mapped,0.,1.),vec3(.84)),vAlpha);
+ outColor=vec4(pow(clamp(mapped,0.,1.),vec3(.84)),vAlpha*texel.a);
 }`;
 function hexRGB(s) { const h = s.replace('#', ''); return [parseInt(h.slice(0, 2), 16) / 255, parseInt(h.slice(2, 4), 16) / 255, parseInt(h.slice(4, 6), 16) / 255]; }
 const kindScale = { bracelet: 1, ring: 1, necklace: 1, 'bag-charm': 1, phone: 1, tablet: 1, macbook: 1, bottle: 1 };
@@ -67,6 +75,7 @@ export class Viewer3D {
     prog = null;
     shapes = [];
     overlay = null;
+    textures = [];
     u = {};
     yaw = .15;
     pitch = -.11;
@@ -122,7 +131,7 @@ export class Viewer3D {
             throw Error('Shader linker gagal');
         this.prog = prog;
         g.useProgram(prog);
-        for (const n of ['uProjection', 'uYaw', 'uPitch', 'uDistance', 'uScale', 'uTint', 'uUseTint', 'uAlpha', 'uOffset', 'uLidAngle', 'uFingerBend', 'uSurface'])
+        for (const n of ['uProjection', 'uYaw', 'uPitch', 'uDistance', 'uScale', 'uTint', 'uUseTint', 'uAlpha', 'uOffset', 'uLidAngle', 'uFingerBend', 'uSurface', 'uMap', 'uHasMap', 'uPhoto', 'uPhotoColorize', 'uTintPhoto'])
             this.u[n] = g.getUniformLocation(prog, n);
         g.enable(g.DEPTH_TEST);
         g.depthFunc(g.LEQUAL);
@@ -132,11 +141,11 @@ export class Viewer3D {
     catch (e) {
         this.fail('Grafis perangkat tidak mendukung renderer: ' + String(e));
     } }
-    makeShape(pos, norm, color, indices, index) {
+    makeShape(pos, norm, color, indices, index, uv = new Float32Array(pos.length / 3 * 2), texture = null, photo = false, hasAlpha = false) {
         const g = this.gl, vao = g.createVertexArray();
         g.bindVertexArray(vao);
         const buffers = [];
-        const arrays = [[0, pos, 3], [1, norm, 3], [2, color, 4]];
+        const arrays = [[0, pos, 3], [1, norm, 3], [2, color, 4], [3, uv, 2]];
         for (const [slot, arr, stride] of arrays) {
             const b = g.createBuffer();
             buffers.push(b);
@@ -149,7 +158,40 @@ export class Viewer3D {
         g.bindBuffer(g.ELEMENT_ARRAY_BUFFER, ib);
         g.bufferData(g.ELEMENT_ARRAY_BUFFER, indices, g.STATIC_DRAW);
         g.bindVertexArray(null);
-        return { vao, count: indices.length, indexType: indices instanceof Uint32Array ? g.UNSIGNED_INT : g.UNSIGNED_SHORT, vbo: buffers, ib, index };
+        return { vao, count: indices.length, indexType: indices instanceof Uint32Array ? g.UNSIGNED_INT : g.UNSIGNED_SHORT, vbo: buffers, ib, index, texture, photo, hasAlpha };
+    }
+    async embeddedImages(json, bin) {
+        const g = this.gl;
+        const imgs = [];
+        for (const im of (json.images || [])) {
+            if (im.bufferView === undefined) {
+                imgs.push(null);
+                continue;
+            }
+            const bv = json.bufferViews[im.bufferView];
+            const off = bv.byteOffset || 0;
+            const data = bin.slice(off, off + bv.byteLength);
+            const bitmap = await createImageBitmap(new Blob([data], { type: im.mimeType || 'image/png' }), { premultiplyAlpha: 'none' });
+            const tex = g.createTexture();
+            if (!tex) {
+                bitmap.close();
+                imgs.push(null);
+                continue;
+            }
+            g.bindTexture(g.TEXTURE_2D, tex);
+            g.pixelStorei(g.UNPACK_FLIP_Y_WEBGL, false);
+            g.texImage2D(g.TEXTURE_2D, 0, g.RGBA, g.RGBA, g.UNSIGNED_BYTE, bitmap);
+            g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.CLAMP_TO_EDGE);
+            g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_T, g.CLAMP_TO_EDGE);
+            g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
+            g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR_MIPMAP_LINEAR);
+            g.generateMipmap(g.TEXTURE_2D);
+            g.bindTexture(g.TEXTURE_2D, null);
+            bitmap.close();
+            imgs.push(tex);
+            this.textures.push(tex);
+        }
+        return imgs;
     }
     disposeShape(s) { const g = this.gl; g.deleteVertexArray(s.vao); s.vbo.forEach(b => g.deleteBuffer(b)); g.deleteBuffer(s.ib); }
     accessor(json, bin, i) {
@@ -206,6 +248,11 @@ export class Viewer3D {
             const bin = all.slice(next + 8, next + 8 + bLen);
             if (this.dead || current !== this.modelLoad)
                 return;
+            this.textures.forEach(t => this.gl.deleteTexture(t));
+            this.textures = [];
+            const imgs = await this.embeddedImages(json, bin);
+            if (this.dead || current !== this.modelLoad)
+                return;
             this.shapes.forEach(s => this.disposeShape(s));
             this.shapes = [];
             let idx = 0;
@@ -227,8 +274,16 @@ export class Viewer3D {
                             colors[k * 4 + l] = colRaw instanceof Uint8Array ? val / 255 : val;
                         }
                     }
+                    const uvRaw = pr.attributes.TEXCOORD_0 === undefined ? null : this.accessor(json, bin, pr.attributes.TEXCOORD_0);
+                    const uv = uvRaw instanceof Float32Array ? uvRaw : new Float32Array(po.length / 3 * 2);
+                    const mat = pr.material === undefined ? null : json.materials?.[pr.material];
+                    const ti = mat?.pbrMetallicRoughness?.baseColorTexture?.index;
+                    const imgID = ti === undefined ? undefined : json.textures?.[ti]?.source;
+                    const tex = imgID === undefined ? null : (imgs[imgID] || null);
+                    const photo = typeof mat?.name === 'string' && mat.name.startsWith('photo_projected_');
+                    const alphaMode = mat?.alphaMode === 'BLEND' || mat?.alphaMode === 'MASK';
                     const normals = this.smoothNormals(po, ii);
-                    this.shapes.push(this.makeShape(po, normals, colors, ii, idx++));
+                    this.shapes.push(this.makeShape(po, normals, colors, ii, idx++, uv, tex, photo, alphaMode));
                 }
             }
             this.fallback.textContent = 'Model 3D siap';
@@ -401,12 +456,21 @@ export class Viewer3D {
             // Jewelry coloration remains intrinsic to the asset in this preview.
             const finish = kind === 'bag-charm' ? (s.index === 0 ? .02 : .12) : kind === 'bracelet' || kind === 'ring' ? (s.index === 0 ? .01 : .70) : kind === 'necklace' ? (s.index < 2 ? .01 : .70) : kind === 'bottle' ? (s.index === 2 || s.index === 3 ? .12 : .95) : kind === 'phone' || kind === 'tablet' || kind === 'macbook' ? .78 : .18;
             g.uniform1f(this.u.uSurface, finish);
+            g.uniform1f(this.u.uHasMap, s.texture ? 1 : 0);
+            g.uniform1f(this.u.uPhoto, s.photo ? 1 : 0);
+            const photoTint = kind === 'bottle' && s.photo && this.options.color.toUpperCase() === '#3E4141';
+            g.uniform1f(this.u.uPhotoColorize, photoTint ? 1 : 0);
+            const tc = hexRGB(this.options.color);
+            g.uniform3f(this.u.uTintPhoto, tc[0], tc[1], tc[2]);
+            g.activeTexture(g.TEXTURE0);
+            g.bindTexture(g.TEXTURE_2D, s.texture);
+            g.uniform1i(this.u.uMap, 0);
             const c = hexRGB(this.options.color);
             g.uniform3f(this.u.uTint, c[0], c[1], c[2]);
             g.uniform1f(this.u.uUseTint, tint);
             g.uniform1f(this.u.uAlpha, alpha);
             g.bindVertexArray(s.vao);
-            if (alpha < 1) {
+            if (alpha < 1 || s.hasAlpha) {
                 g.enable(g.BLEND);
                 g.blendFunc(g.SRC_ALPHA, g.ONE_MINUS_SRC_ALPHA);
                 g.depthMask(false);
@@ -426,6 +490,10 @@ export class Viewer3D {
             g.uniform1f(this.u.uUseTint, 0);
             g.uniform1f(this.u.uAlpha, 1);
             g.uniform1f(this.u.uSurface, .35);
+            g.uniform1f(this.u.uHasMap, 0);
+            g.uniform1f(this.u.uPhoto, 0);
+            g.uniform1f(this.u.uPhotoColorize, 0);
+            g.bindTexture(g.TEXTURE_2D, null);
             g.bindVertexArray(this.overlay.vao);
             g.disable(g.CULL_FACE);
             g.drawElements(g.TRIANGLES, this.overlay.count, this.overlay.indexType, 0);
@@ -465,6 +533,7 @@ export class Viewer3D {
     } }
     dispose() { this.dead = true; this.modelLoad++; this.resizeObserver?.disconnect(); if (this.gl) {
         this.shapes.forEach(s => this.disposeShape(s));
+        this.textures.forEach(t => this.gl.deleteTexture(t));
         if (this.overlay)
             this.disposeShape(this.overlay);
         if (this.prog)
