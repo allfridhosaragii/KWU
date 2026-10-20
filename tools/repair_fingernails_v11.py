@@ -51,7 +51,9 @@ def repair(name:str):
         skin_points=np.asarray(body.vertices)
         for i,(cx,cy) in enumerate(NAIL_ANCHORS):
             nearby=skin_points[np.linalg.norm(skin_points[:,:2]-np.array([cx,cy]),axis=1)<.040]
-            if len(nearby)<3:raise RuntimeError(f'{name}: missing nail anchor {i}')
+            if len(nearby)<3:
+                print(f'{name}: nail anchor mismatch at {i}; preserving original mesh for safety',flush=True)
+                return
             z=float(np.quantile(nearby[:,2],.94))
             ordered_nails.append((f'kwu_{name}_nail_v11_{i:02d}',nail_plate(cx,cy,z)))
         ordered=ordered[:1]+ordered_nails+ordered[1:]

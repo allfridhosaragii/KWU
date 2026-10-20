@@ -12,7 +12,7 @@ Pada 20 Oktober 2026, tampilan manekin saat rotasi terlihat seperti video 144p. 
 6. Atlas kedua hanya diunduh ketika pengguna mengubah sudut ketinggian, bukan saat membuka halaman.
 7. Lima tone kulit tetap ada, dengan default Sawo Matang.
 8. Sebanyak 18 model perangkat lain mempertahankan file V10 yang masih bisa diputar, agar deploy tidak mengubah fungsionalitas yang tidak diminta.
-9. Bug kuku berlubang ditangani dengan mengganti mesh kuku yang terbuka menjadi pelat kuku tertutup sebelum tahap render.
+9. Koreksi kuku bersifat bersyarat. Bila koordinat anatomi pada GLB produksi tidak sesuai titik referensi, script tidak akan mengubah mesh. Ini mencegah kerusakan model dan menggagalkan deploy HD.
 10. Browser cache diperbarui ke V11 agar JavaScript lama tidak terus terpakai.
 
 ## Hasil perbandingan teknis
