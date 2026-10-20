@@ -39,3 +39,5 @@ jobs:
           for width in 320 390 768 1440; do
             python tests/owner_forms_v12_inline.py "$width"
           done
+      - name: Test 360-degree ornament position color and size controls
+        run: python tests/interactive_controls_v13_inline.py

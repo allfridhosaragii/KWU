@@ -55,6 +55,10 @@ export class Turntable360 {
  readonly element:HTMLDivElement;
  private sprite:HTMLDivElement;
  private retina:RetinaStill;
+ private detailPreview:HTMLDivElement;
+ private detailBadge:HTMLDivElement;
+ private requestedQuality:'auto'|'low'|'high'='auto';
+ private designParams: {kind:string;ornament:string;color:string;placement:number;rotation:number;scale:number;finger:number;caseType:string;pose:number;quality:'auto'|'low'|'high'}|null=null;
  private picture:HTMLImageElement|null=null;
  private meta:TurntableMeta|null=null;
  private azimuth=0;
@@ -77,6 +81,18 @@ export class Turntable360 {
    outer.style.touchAction='none';outer.style.userSelect='none';
    const sprite=document.createElement('div');sprite.className='kwu-turntable-sprite';outer.append(sprite);
    this.element=outer;this.sprite=sprite;this.retina=new RetinaStill(outer,base);
+   const ornamentPreview=document.createElement('div');
+   ornamentPreview.className='kwu-decoration-preview';
+   ornamentPreview.setAttribute('aria-label','Ilustrasi ornamen yang dipilih');
+   ornamentPreview.style.display='none';
+   outer.append(ornamentPreview);
+   this.detailPreview=ornamentPreview;
+   const info=document.createElement('div');
+   info.className='kwu-design-readout';
+   info.setAttribute('role','status');
+   info.setAttribute('aria-live','polite');
+   info.style.display='none';
+   outer.append(info);this.detailBadge=info;
    host.append(outer);
    outer.addEventListener('dragstart',event=>event.preventDefault());
    outer.addEventListener('pointerdown',e=>{
@@ -103,6 +119,42 @@ export class Turntable360 {
      e.preventDefault();
    });
  }
+ setCustomization(options:{kind:string;ornament:string;color:string;placement:number;rotation:number;scale:number;finger:number;caseType:string;pose:number;quality:'auto'|'low'|'high'}){
+   if(this.disposed)return;
+   const prev=this.designParams;
+   this.designParams={...options};
+   this.requestedQuality=options.quality;
+   // These images are fixed 3D camera renders. Decorations below are clearly
+   // marked as 2D approximate previews, not manufacturing-accurate placement.
+   const symbols:Record<string,string>={heart:'♥',star:'★',flower:'✿',pearl:'●'};
+   const names:Record<string,string>={heart:'Hati',star:'Bintang',flower:'Bunga',pearl:'Pearl'};
+   const symbol=symbols[options.ornament]||symbols.heart;
+   const title=names[options.ornament]||names.heart;
+   const position=bound(Number(options.placement)||50,0,100);
+   const scale=bound(Number(options.scale)||1,.55,1.55);
+   const rotation=Number(options.rotation)||0;
+   const color=/^#[0-9a-f]{6}$/i.test(options.color)?options.color:'#B49376';
+   this.detailPreview.textContent=symbol;
+   this.detailPreview.style.display='flex';
+   this.detailPreview.style.color=color;
+   this.detailPreview.style.transform=`translate(-50%, -50%) rotate(${rotation}deg) scale(${scale})`;
+   this.detailPreview.style.left=`${45+(position-50)*.4}%`;
+   const fingerY=[55,45,40,43,49];
+   this.detailPreview.style.top=`${options.kind==='bracelet'?72:options.kind==='ring'?fingerY[bound(options.finger,0,4)]||45:options.kind==='necklace'?67:options.kind==='bag-charm'?35:50}%`;
+   this.detailPreview.classList.toggle('kwu-decoration-sticker', ['phone','tablet','macbook','bottle'].includes(options.kind));
+   this.detailBadge.style.display='block';
+   this.detailBadge.textContent=`Preview ornamen 2D: ${title} · Posisi ${Math.round(position)}% · ${scale.toFixed(2)}×`;
+   // The pose slider is mapped to available camera elevation in GPU-free mode,
+   // which makes its effect visible without falsely claiming skeletal posing.
+   if(this.meta && (prev===null || prev.pose!==options.pose)){
+     this.pitchRow=bound(Number(options.pose)||50,0,100)/100*(this.meta.elevations.length-1);
+     this.paint();
+   }
+   if(prev?.quality!==options.quality){
+     if(options.quality==='low')this.retina.reset();
+     else this.paint();
+   }
+ }
  private distance(){const [a,b]=[...this.pointers.values()];return a&&b?Math.hypot(a.x-b.x,a.y-b.y):0;}
  async load(name:string){
    this.lastName=name;this.retina.reset();
@@ -120,6 +172,7 @@ export class Turntable360 {
      this.manifestVersion=manifest.version;
      this.meta=meta;this.azimuth=0;this.pitchRow=0;this.magnification=1;
      if(this.picture){this.picture.remove();this.picture=null;}
+     if(this.designParams)this.setCustomization(this.designParams);
      this.sprite.style.backgroundImage='none';
      this.sprite.style.backgroundRepeat='no-repeat';
      this.sprite.style.backgroundSize=`${meta.columns*100}% ${meta.rows*100}%`;
@@ -189,7 +242,7 @@ export class Turntable360 {
    const yPct=m.rows>1?100*y/(m.rows-1):0;
    this.sprite.style.backgroundPosition=`${xPct.toFixed(4)}% ${yPct.toFixed(4)}%`;
    this.element.dataset.frame=String(elevation*m.azimuthFrames+horizontal);
-   this.retina.display(m.name,this.skinTone,elevation,horizontal,this.magnification);
+   if(this.requestedQuality!=='low')this.retina.display(m.name,this.skinTone,elevation,horizontal,this.magnification);
  }
  async setSkinTone(tone:string){
    if(tone===this.skinTone)return;

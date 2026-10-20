@@ -38,3 +38,10 @@
 .kwu-turntable:focus-visible{outline:3px solid #8F503C;outline-offset:-4px}
 .kwu-turntable-sprite{width:100%;height:auto;aspect-ratio:1/1;max-height:100%;flex-shrink:1;background-position:0% 0%;background-repeat:no-repeat;transform-origin:center center;will-change:background-position,transform;pointer-events:none}
 @media(min-aspect-ratio:1/1){.kwu-turntable-sprite{width:auto;height:100%;max-width:100%}}
+
+/* V13: immediately responsive design controls while using frame-based 360 mode.
+   The ornament graphic is an explicitly labelled placement approximation. */
+.kwu-decoration-preview{position:absolute;z-index:3;pointer-events:none;align-items:center;justify-content:center;width:35px;height:35px;font-size:25px;line-height:1;background:rgba(255,250,244,.9);border:1px solid rgba(110,85,65,.30);border-radius:50%;box-shadow:0 2px 9px rgba(49,37,26,.15);transform-origin:center center;}
+.kwu-decoration-preview.kwu-decoration-sticker{border-radius:9px;}
+.kwu-design-readout{position:absolute;z-index:3;pointer-events:none;left:12px;top:54px;max-width:calc(100% - 24px);padding:6px 10px;border-radius:10px;background:rgba(255,252,247,.92);color:#554537;font-size:11px;line-height:1.5;font-weight:650;}
+@media(max-width:480px){.kwu-design-readout{font-size:10px;top:56px;left:8px}.kwu-decoration-preview{width:30px;height:30px;font-size:22px}}

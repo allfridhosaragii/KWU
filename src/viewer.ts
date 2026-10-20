@@ -142,6 +142,7 @@ export class Viewer3D {
        this.fallback.textContent=msg;
      },this.options.skinTone);
    }
+   this.turntable.setCustomization(this.options);
    void this.turntable.load(this.selection());
  }
  private compile(kind:number,source:string){const g=this.gl!,s=g.createShader(kind)!;g.shaderSource(s,source);g.compileShader(s);if(!g.getShaderParameter(s,g.COMPILE_STATUS))throw Error(g.getShaderInfoLog(s)||'Shader gagal');return s}
@@ -242,7 +243,7 @@ export class Viewer3D {
  const alphaMode=mat?.alphaMode==='BLEND'||mat?.alphaMode==='MASK';
  const normals=isSkin?this.smoothAnatomicalNormals(po,ii):this.smoothNormals(po,ii);this.shapes.push(this.makeShape(po,normals,colors,ii,idx++,uv,tex,photo,alphaMode,normalTexture,isSkin));}}
  this.fallback.textContent=`3D aktif (${this.glVersion===2?'WebGL 2':'WebGL 1'})`;const pill=this.canvas.parentElement?.querySelector('.viewer-top .pill');if(pill)pill.textContent=`● 3D Aktif (${this.glVersion===2?'WebGL 2':'WebGL 1'})`;this.overlayRebuild();this.draw();}catch(e){if(current===this.modelLoad&&!this.dead)this.fail('Model 3D belum berhasil dimuat. '+String(e))}}
- update(opts:ViewerOptions){const changed=opts.kind!==this.options.kind||opts.deviceModel!==this.options.deviceModel;this.options={...opts};if(this.turntable){if(changed)void this.turntable.load(this.selection());else void this.turntable.setSkinTone(this.options.skinTone);return;}if(!this.gl){if(this.fallbackImage){const file=opts.deviceModel||opts.kind;this.fallbackImage.src=`${this.base}assets/previews/${file}.webp`;}return}if(changed){this.reset();void this.load(opts.kind)}else{this.overlayRebuild();this.draw()}}
+ update(opts:ViewerOptions){const changed=opts.kind!==this.options.kind||opts.deviceModel!==this.options.deviceModel;const qualityChanged=opts.quality!==this.options.quality;this.options={...opts};if(this.turntable){this.turntable.setCustomization(this.options);if(changed)void this.turntable.load(this.selection());else void this.turntable.setSkinTone(this.options.skinTone);return;}if(!this.gl){if(this.fallbackImage){const file=opts.deviceModel||opts.kind;this.fallbackImage.src=`${this.base}assets/previews/${file}.webp`;}return}if(changed){this.reset();void this.load(opts.kind)}else{this.overlayRebuild();if(qualityChanged)this.resize();else this.draw()}}
  reset(){if(this.turntable){this.turntable.reset();return;}this.yaw=.15;this.pitch=-.11;this.dist=this.options.kind==='necklace'?6.15:5.5;this.draw()}
  rotate(degrees:number){if(this.turntable){this.turntable.rotate(degrees);return;}if(!Number.isFinite(degrees))return;this.yaw+=degrees*Math.PI/180;this.draw()}
  zoom(delta:number){if(this.turntable){this.turntable.zoom(delta);return;}if(!Number.isFinite(delta))return;this.dist=Math.max(2.5,Math.min(11,this.dist+delta));this.draw()}
