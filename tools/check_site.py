@@ -46,7 +46,10 @@ if 'Ini bukan autentikasi sungguhan' not in src:errors.append('Login must disclo
 if 'DOMPurify' in src:pass
 site_size=sum(p.stat().st_size for p in (ROOT/'site').rglob('*') if p.is_file())
 # Entire site size is not initial-page transfer size; 3D assets load lazily.
-if site_size>70*1024*1024:errors.append('Static site exceeds 70 MB total asset archive budget')
+# Retina atlas PNGs for the 3 anatomical scenes are loaded lazily per model,
+# tone, and elevation; the user explicitly prioritizes image sharpness over
+# total repository size. This is not the initial page transfer size.
+if site_size>220*1024*1024:errors.append('Static site exceeds 220 MB total archive budget')
 report={'passed':not errors,'models':info,'static_site_bytes':site_size,'issues':errors}
 (ROOT/'qa-static-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
 print(json.dumps(report,ensure_ascii=False,indent=2))

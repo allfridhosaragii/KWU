@@ -45,6 +45,8 @@ jobs:
         run: python tools/skin_detail_postprocess_v6.py
       - name: Enhance anatomical PBR normal and skin tone maps (V7)
         run: python tools/skin_anatomy_v7.py
+      - name: Repair incomplete anatomical fingernails (V11)
+        run: python tools/repair_fingernails_v11.py
       - name: Refine device optical details and logo
         run: python tools/device_detail_v5.py
       - name: Update metadata and no-WebGL posters
@@ -53,14 +55,16 @@ jobs:
           python tools/photo_previews_v5.py
       - name: Generate updated anatomy previews
         run: KWU_PREVIEW_MODELS=bracelet,ring,necklace xvfb-run -a python tools/render_v5_previews.py
-      - name: Generate 360-degree offline frames for all 21 models
-        run: xvfb-run -a python tools/build_turntables_v10.py
+      - name: Generate retina 360-degree atlases for jewelry mannequins (V11)
+        run: KWU_TURNTABLE_MODELS=bracelet,ring,necklace xvfb-run -a python tools/build_turntables_v11.py
+      - name: Verify HD atlases and preserve legacy device turntables
+        run: python tools/check_turntables_v11.py
       - name: Source build and static integrity
         run: |
           npm run build
           python tools/check_models_v2.py
-      - name: Bust browser caches for 3D viewer V9
-        run: python tools/cache_bust_v10.py
+      - name: Bust caches for HD 360-degree viewer V11
+        run: python tools/cache_bust_v11.py
       - name: Commit generated model data back to main
         run: |
           git config user.name 'github-actions[bot]'
