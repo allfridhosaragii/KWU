@@ -1,4 +1,4 @@
-import { Viewer3D } from './viewer.js?v=v14-1';
+import { Viewer3D } from './viewer.js?v=v16-1';
 const BASE = window.KWU_BASE || '/';
 const ROOT = document.getElementById('app');
 const makeId = () => globalThis.crypto?.randomUUID?.() || ('demo-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2));

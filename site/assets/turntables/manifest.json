@@ -1,5 +1,5 @@
 {
-  "version": 14,
+  "version": 16,
   "models": {
     "bracelet": {
       "name": "bracelet",
@@ -12,7 +12,7 @@
         12
       ],
       "tileSize": 768,
-      "bytes": 6703777,
+      "bytes": 6855887,
       "skinVariants": [
         "sawo-matang",
         "kuning-langsat",
@@ -35,7 +35,7 @@
         12
       ],
       "tileSize": 768,
-      "bytes": 6646971,
+      "bytes": 6799124,
       "skinVariants": [
         "sawo-matang",
         "kuning-langsat",
