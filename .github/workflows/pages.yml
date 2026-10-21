@@ -110,6 +110,8 @@ jobs:
       - name: Check model pipeline after rebuild
         if: steps.changes.outputs.rebuild == 'true'
         run: python tools/check_models_v2.py
+      - name: Single-canvas 360 regression check (V17)
+        run: python tests/turntable_single_canvas_v17.py
       - name: Bust caches for HD 360-degree viewer V11
         run: python tools/cache_bust_v11.py
       - name: Commit generated model data back to main

@@ -7,17 +7,19 @@ class RetinaStill {
  private readonly image:HTMLImageElement;
  private lastKey='';
  private currentKey='';
+ private selectedImage:HTMLImageElement|null=null;
  private requestId=0;
  private disposed=false;
  private previousAngle:number|null=null;
  private readonly cachedFrames=new Map<string,HTMLImageElement>();
  private readonly pendingFrames=new Map<string,Promise<HTMLImageElement|null>>();
  private readonly maxCache=7;
- constructor(host:HTMLElement,private base:string){
+ constructor(host:HTMLElement,private base:string,private onReady:()=>void){
    const image=new Image();image.draggable=false;image.alt='';
    image.decoding='async';image.setAttribute('aria-hidden','true');
    image.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none;opacity:0;transition:opacity .07s linear;transform-origin:center center;z-index:1;image-rendering:auto';
-   host.append(image);this.image=image;
+   // Decode HD frames off-DOM: canvas is the ONLY visible product surface.
+   this.image=image;
  }
  private frameUrl(model:string,tone:string,row:number,angle:number){
    const colors=['sawo-matang','kuning-langsat','light-beige','medium-tan','deep-brown'];
@@ -67,14 +69,13 @@ class RetinaStill {
  }
  private showFrame(url:string,image:HTMLImageElement){
    if(this.disposed)return;
-   this.image.src=image.src;
-   this.image.dataset.hdFrame='1536';
-   this.image.style.opacity='1';
+   this.selectedImage=image;
    this.currentKey=url;
+   queueMicrotask(()=>{if(!this.disposed&&this.currentKey===url)this.onReady();});
  }
  display(model:string,tone:string,row:number,angle:number,zoom:number){
    if(this.disposed)return;
-   this.image.style.transform='scale('+Math.max(.8,Math.min(zoom,2.8)).toFixed(3)+')';
+   // Zoom the parent canvas once; never transform a second image layer.
    if(!['bracelet','ring','necklace'].includes(model))return;
    const a=((Math.round(angle)%24)+24)%24;
    const previous=this.previousAngle;
@@ -84,6 +85,7 @@ class RetinaStill {
    const url=this.frameUrl(model,tone,row,a);
    if(url===this.lastKey)return;
    this.lastKey=url;
+   this.selectedImage=null;
    const request=++this.requestId;
    const hot=this.cachedFrames.get(url);
    if(hot){
@@ -100,18 +102,22 @@ class RetinaStill {
    }
    this.prefetch(model,tone,row,a,direction);
  }
+ activeFrame():HTMLImageElement|null{
+   return this.currentKey===this.lastKey?this.selectedImage:null;
+ }
  screenshot(){
-   if(!this.currentKey||this.currentKey!==this.lastKey||!this.image.complete||this.image.naturalWidth<1000)return '';
+   const img=this.activeFrame();
+   if(!img||!img.complete||img.naturalWidth<1000)return '';
    const canvas=document.createElement('canvas');
-   canvas.width=this.image.naturalWidth;canvas.height=this.image.naturalHeight;
+   canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
    const ctx=canvas.getContext('2d');if(!ctx)return '';
-   try{ctx.drawImage(this.image,0,0);return canvas.toDataURL('image/png');}
+   try{ctx.drawImage(img,0,0);return canvas.toDataURL('image/png');}
    catch{return ''}
  }
  reset(){
    if(this.disposed)return;
    ++this.requestId;
-   this.lastKey='';this.currentKey='';this.previousAngle=null;
+   this.lastKey='';this.currentKey='';this.selectedImage=null;this.previousAngle=null;
    this.image.style.opacity='0';
  }
  dispose(){
@@ -166,7 +172,7 @@ export class Turntable360 {
    if(!ctx)throw new Error('Canvas2D tidak tersedia');
    sprite.append(frameCanvas);
    this.element=outer;this.sprite=sprite;this.frameCanvas=frameCanvas;this.frameContext=ctx;
-   this.retina=new RetinaStill(outer,base);
+   this.retina=new RetinaStill(outer,base,()=>{if(this.disposed||this.requestedQuality==='low')return;this.renderedFrame='';this.paint();});
    const ornamentPreview=document.createElement('div');
    ornamentPreview.className='kwu-decoration-preview';
    ornamentPreview.setAttribute('aria-label','Ilustrasi ornamen yang dipilih');
@@ -181,6 +187,7 @@ export class Turntable360 {
    outer.append(info);this.detailBadge=info;
    host.append(outer);
    outer.addEventListener('dragstart',event=>event.preventDefault());
+   outer.addEventListener('dblclick',event=>{event.preventDefault();this.reset();});
    outer.addEventListener('pointerdown',e=>{
      e.preventDefault();outer.setPointerCapture(e.pointerId);this.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
      if(this.pointers.size>=2)this.pinchDistance=this.distance();
@@ -238,7 +245,7 @@ export class Turntable360 {
    }
    if(prev?.quality!==options.quality){
      if(options.quality==='low')this.retina.reset();
-     else this.paint();
+     this.renderedFrame='';this.paint();
    }
  }
  private distance(){const [a,b]=[...this.pointers.values()];return a&&b?Math.hypot(a.x-b.x,a.y-b.y):0;}
@@ -313,33 +320,39 @@ export class Turntable360 {
  }
  private paint(){
    if(this.disposed)return;
+   // One canvas and one zoom transform for both the standard and HD frames.
+   // This prevents detached fingers when async 1536p images replace 768p frames.
    this.sprite.style.transform=`scale(${this.magnification.toFixed(3)})`;
    const m=this.meta;if(!m)return;
    const horizontal=((Math.round(this.azimuth)%m.azimuthFrames)+m.azimuthFrames)%m.azimuthFrames;
    const elevation=Math.round(bound(this.pitchRow,0,m.elevations.length-1));
    if(m.splitElevations){
      const url=this.atlasUrl(elevation);
-     if(this.renderedAtlas!==url){void this.useAtlas(elevation);}
-     // One atlas contains exactly one elevation. Vertical drag lazy-loads the other.
+     if(this.renderedAtlas!==url)void this.useAtlas(elevation);
    }
    const frame=m.splitElevations?horizontal:elevation*m.azimuthFrames+horizontal;
    const x=frame%m.columns,y=Math.floor(frame/m.columns);
-   // Explicitly isolate the frame, otherwise zoom may reveal adjacent atlas tiles.
-   if(this.currentImg && this.renderedAtlas===this.atlasUrl(elevation)){
-     const key=this.renderedAtlas+':'+frame;
+   if(this.requestedQuality!=='low')
+     this.retina.display(m.name,this.skinTone,elevation,horizontal,this.magnification);
+   const hd=this.requestedQuality==='low'?null:this.retina.activeFrame();
+   if(this.currentImg&&this.renderedAtlas===this.atlasUrl(elevation)){
+     const key=this.renderedAtlas+':'+frame+':'+(hd?'1536':'standard');
      if(this.renderedFrame!==key){
-       const tile=m.tileSize;
+       const tile=hd?hd.naturalWidth:m.tileSize;
        if(this.frameCanvas.width!==tile||this.frameCanvas.height!==tile){
          this.frameCanvas.width=tile;this.frameCanvas.height=tile;
        }
-       if(this.currentImg.naturalWidth>=(x+1)*tile && this.currentImg.naturalHeight>=(y+1)*tile){
-         this.frameContext.drawImage(this.currentImg,x*tile,y*tile,tile,tile,0,0,tile,tile);
+       if(hd){
+         this.frameContext.drawImage(hd,0,0,tile,tile);
+         this.renderedFrame=key;
+       }else if(this.currentImg.naturalWidth>=(x+1)*m.tileSize
+              && this.currentImg.naturalHeight>=(y+1)*m.tileSize){
+         this.frameContext.drawImage(this.currentImg,x*m.tileSize,y*m.tileSize,m.tileSize,m.tileSize,0,0,tile,tile);
          this.renderedFrame=key;
        }else console.warn('[KWU 360] Atlas dimensions mismatch',m);
      }
    }
    this.element.dataset.frame=String(elevation*m.azimuthFrames+horizontal);
-   if(this.requestedQuality!=='low')this.retina.display(m.name,this.skinTone,elevation,horizontal,this.magnification);
  }
  async setSkinTone(tone:string){
    if(tone===this.skinTone)return;
