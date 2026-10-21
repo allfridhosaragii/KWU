@@ -1,7 +1,7 @@
-"""Prevent old V9/V10 modules from being served after V11 atlas deployment."""
+"""Prevent old V9-V14 modules from being served after V11 atlas deployment."""
 from pathlib import Path
 import re
-version='v14-1'
+version='v15-1'
 app=Path('site/assets/app.js')
 viewer=Path('site/assets/viewer.js')
 html=Path('site/index.html')

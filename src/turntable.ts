@@ -4,65 +4,124 @@
  * No huge retina atlas is downloaded on a mobile browser.
  */
 class RetinaStill {
- private image:HTMLImageElement;
- private timer:number|undefined;
+ private readonly image:HTMLImageElement;
  private lastKey='';
- private sequence=0;
+ private currentKey='';
+ private requestId=0;
  private disposed=false;
+ private previousAngle:number|null=null;
  private readonly cachedFrames=new Map<string,HTMLImageElement>();
- private readonly preloading=new Set<string>();
+ private readonly pendingFrames=new Map<string,Promise<HTMLImageElement|null>>();
+ private readonly maxCache=7;
  constructor(host:HTMLElement,private base:string){
-   const image=new Image();image.draggable=false;image.alt='';image.decoding='async';
-   image.setAttribute('aria-hidden','true');
-   image.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none;opacity:0;transition:opacity .11s linear;transform-origin:center center;z-index:1';
+   const image=new Image();image.draggable=false;image.alt='';
+   image.decoding='async';image.setAttribute('aria-hidden','true');
+   image.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none;opacity:0;transition:opacity .07s linear;transform-origin:center center;z-index:1;image-rendering:auto';
    host.append(image);this.image=image;
  }
- private preloadAdjacent(url:string,angle:number){
-   for(const offset of [-1,1]){
-     const neighbor=((angle+offset)%24+24)%24;
-     const next=url.replace(/a\d{2}\.webp/, 'a'+String(neighbor).padStart(2,'0')+'.webp');
-     if(this.cachedFrames.has(next)||this.preloading.has(next)||this.disposed)continue;
-     this.preloading.add(next);
-     const image=new Image();image.decoding='async';image.src=next;
-     void image.decode().then(()=>{
-       if(this.disposed)return;
-       this.cachedFrames.set(next,image);
-       while(this.cachedFrames.size>5)this.cachedFrames.delete(this.cachedFrames.keys().next().value!);
-     }).catch(()=>{}).finally(()=>this.preloading.delete(next));
+ private frameUrl(model:string,tone:string,row:number,angle:number){
+   const colors=['sawo-matang','kuning-langsat','light-beige','medium-tan','deep-brown'];
+   const safeTone=colors.includes(tone)?tone:'sawo-matang';
+   const safeRow=Math.max(0,Math.min(1,Math.round(row)));
+   const safeAngle=((Math.round(angle)%24)+24)%24;
+   return this.base+'assets/turntables/hires/'+model+'/'+safeTone+'/e'+safeRow+'/a'+String(safeAngle).padStart(2,'0')+'.webp?v=15-1';
+ }
+ private touch(url:string,img:HTMLImageElement){
+   this.cachedFrames.delete(url);
+   this.cachedFrames.set(url,img);
+   while(this.cachedFrames.size>this.maxCache){
+     const oldest=this.cachedFrames.keys().next().value;
+     if(oldest===undefined)break;
+     this.cachedFrames.delete(oldest);
    }
+ }
+ private fetchFrame(url:string,highPriority:boolean):Promise<HTMLImageElement|null>{
+   const cached=this.cachedFrames.get(url);
+   if(cached){this.touch(url,cached);return Promise.resolve(cached);}
+   const previous=this.pendingFrames.get(url);
+   if(previous)return previous;
+   // These are separate 1536px stills, not a giant atlas. Keep decoded
+   // frames bounded in memory to avoid Safari tab reloads on mobile.
+   const image=new Image();image.decoding='async';image.draggable=false;
+   if('fetchPriority' in image)image.fetchPriority=highPriority?'high':'low';
+   const request=image.decode ? undefined : null;
+   image.src=url;
+   const pending=(request===null?new Promise<void>((resolve,reject)=>{
+     image.onload=()=>resolve();image.onerror=()=>reject(new Error('HD frame unavailable'));
+   }):image.decode()).then(()=>{
+     if(this.disposed)return null;
+     this.touch(url,image);
+     return image;
+   }).catch(()=>{
+     return null;
+   }).finally(()=>this.pendingFrames.delete(url));
+   this.pendingFrames.set(url,pending);
+   return pending;
+ }
+ private prefetch(model:string,tone:string,row:number,angle:number,direction:number){
+   const offsets=direction===0?[-1,1]:[direction,2*direction,-direction];
+   for(const offset of offsets){
+     const url=this.frameUrl(model,tone,row,angle+offset);
+     if(this.cachedFrames.has(url)||this.pendingFrames.has(url))continue;
+     // High-res prefetch should not starve the frame actively being displayed.
+     if(this.pendingFrames.size>=4)break;
+     void this.fetchFrame(url,false);
+   }
+ }
+ private showFrame(url:string,image:HTMLImageElement){
+   if(this.disposed)return;
+   this.image.src=image.src;
+   this.image.dataset.hdFrame='1536';
+   this.image.style.opacity='1';
+   this.currentKey=url;
  }
  display(model:string,tone:string,row:number,angle:number,zoom:number){
    if(this.disposed)return;
    this.image.style.transform='scale('+Math.max(.8,Math.min(zoom,2.8)).toFixed(3)+')';
    if(!['bracelet','ring','necklace'].includes(model))return;
-   const colors=['sawo-matang','kuning-langsat','light-beige','medium-tan','deep-brown'];
-   const t=colors.includes(tone)?tone:'sawo-matang';
-   const r=Math.max(0,Math.min(1,Math.round(row)));
    const a=((Math.round(angle)%24)+24)%24;
-   const url=this.base+'assets/turntables/hires/'+model+'/'+t+'/e'+r+'/a'+String(a).padStart(2,'0')+'.webp?v=14';
+   const previous=this.previousAngle;
+   const diff=previous===null?0:((a-previous+36)%24)-12;
+   const direction=diff===0?0:diff>0?1:-1;
+   this.previousAngle=a;
+   const url=this.frameUrl(model,tone,row,a);
    if(url===this.lastKey)return;
-   this.lastKey=url;this.image.style.opacity='0';
-   if(this.timer!==undefined)clearTimeout(this.timer);
-   const seq=++this.sequence;
+   this.lastKey=url;
+   const request=++this.requestId;
    const hot=this.cachedFrames.get(url);
-   if(hot){this.image.src=hot.src;this.image.style.opacity='1';this.image.dataset.hdFrame='1536';this.preloadAdjacent(url,a);return;}
-   this.timer=window.setTimeout(async()=>{
-     this.timer=undefined;
-     try{
-       const candidate=new Image();candidate.decoding='async';candidate.src=url;
-       await candidate.decode();
-       if(this.disposed||seq!==this.sequence||url!==this.lastKey)return;
-       this.image.src=url;this.image.style.opacity='1';this.image.dataset.hdFrame='1536';
-       this.cachedFrames.set(url,candidate);
-       while(this.cachedFrames.size>5)this.cachedFrames.delete(this.cachedFrames.keys().next().value!);
-       this.preloadAdjacent(url,a);
-     }catch{
-       if(seq===this.sequence)this.image.style.opacity='0';
-     }
-   },75);
+   if(hot){
+     this.touch(url,hot);
+     this.showFrame(url,hot);
+   }else{
+     // The lower-resolution turntable stays responsive until the current
+     // 1536px frame arrives. No 75ms idle delay: decode begins immediately.
+     this.image.style.opacity='0';
+     void this.fetchFrame(url,true).then(image=>{
+       if(!image||this.disposed||request!==this.requestId||url!==this.lastKey)return;
+       this.showFrame(url,image);
+     });
+   }
+   this.prefetch(model,tone,row,a,direction);
  }
- reset(){if(this.disposed)return;this.sequence++;if(this.timer!==undefined)clearTimeout(this.timer);this.timer=undefined;this.lastKey='';this.image.style.opacity='0';}
- dispose(){this.reset();this.disposed=true;this.cachedFrames.clear();this.preloading.clear();this.image.remove();}
+ screenshot(){
+   if(!this.currentKey||this.currentKey!==this.lastKey||!this.image.complete||this.image.naturalWidth<1000)return '';
+   const canvas=document.createElement('canvas');
+   canvas.width=this.image.naturalWidth;canvas.height=this.image.naturalHeight;
+   const ctx=canvas.getContext('2d');if(!ctx)return '';
+   try{ctx.drawImage(this.image,0,0);return canvas.toDataURL('image/png');}
+   catch{return ''}
+ }
+ reset(){
+   if(this.disposed)return;
+   ++this.requestId;
+   this.lastKey='';this.currentKey='';this.previousAngle=null;
+   this.image.style.opacity='0';
+ }
+ dispose(){
+   if(this.disposed)return;
+   this.reset();this.disposed=true;
+   this.cachedFrames.clear();this.pendingFrames.clear();this.image.remove();
+ }
 }
 
 /** Interactive 360° frame renderer. Rotates offline-rendered GLB views without WebGL.
@@ -238,7 +297,7 @@ export class Turntable360 {
      this.sprite.style.backgroundImage=`url("${url}")`;
      this.sprite.style.backgroundSize=`${m.columns*100}% ${m.rows*100}%`;
      this.paint();
-     this.onStatus(`360° HD dapat diputar • ${m.tileSize}px per sudut • tanpa GPU`);
+     this.onStatus(['bracelet','ring','necklace'].includes(m.name)?'360° bisa diputar • HD 1536p dimuat otomatis':'360° bisa diputar • '+m.tileSize+'p per sudut');
    }catch(error){
      if(this.disposed||seq!==this.atlasSequence)return;
      this.loadingAtlas='';
@@ -275,7 +334,7 @@ export class Turntable360 {
  reset(){this.azimuth=0;this.pitchRow=0;this.magnification=1;this.paint();}
  rotate(degrees:number){if(!Number.isFinite(degrees)||!this.meta)return;this.azimuth+=degrees/(360/this.meta.azimuthFrames);this.paint();}
  zoom(delta:number){if(!Number.isFinite(delta))return;this.magnification=bound(this.magnification-delta,.8,2.8);this.paint();}
- screenshot(){const im=this.currentImg,m=this.meta;if(!im||!m)return '';
+ screenshot(){const hd=this.retina.screenshot();if(hd)return hd;const im=this.currentImg,m=this.meta;if(!im||!m)return '';
    const absolute=Number(this.element.dataset.frame||0);const frame=m.splitElevations?absolute%m.azimuthFrames:absolute;const tile=m.tileSize;
    const c=document.createElement('canvas');c.width=tile;c.height=tile;
    const ctx=c.getContext('2d');if(!ctx)return '';

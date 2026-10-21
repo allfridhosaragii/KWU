@@ -45,3 +45,7 @@
 .kwu-decoration-preview.kwu-decoration-sticker{border-radius:9px;}
 .kwu-design-readout{position:absolute;z-index:3;pointer-events:none;left:12px;top:54px;max-width:calc(100% - 24px);padding:6px 10px;border-radius:10px;background:rgba(255,252,247,.92);color:#554537;font-size:11px;line-height:1.5;font-weight:650;}
 @media(max-width:480px){.kwu-design-readout{font-size:10px;top:56px;left:8px}.kwu-decoration-preview{width:30px;height:30px;font-size:22px}}
+
+/* V15: HD on-demand skin frames retain normal browser interpolation during zoom. */
+.kwu-turntable img[ data-hd-frame ]{image-rendering:auto;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+@media(prefers-reduced-motion:reduce){.kwu-turntable img{transition:none!important}}
