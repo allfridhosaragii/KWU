@@ -62,7 +62,7 @@ with sync_playwright() as pw:
   page.wait_for_function("window.tt.renderedAtlas.includes('bracelet--deep-brown--e0.png') && window.tt.retina.activeFrame()?.naturalWidth===1536",timeout=30000)
   checks.append('Skin-tone change keeps HD canvas active')
   page.locator('.kwu-turntable').dblclick()
-  assert page.locator('.kwu-turntable-sprite').evaluate("e=>e.style.transform")=='scale(1.000)'
+  assert abs(page.evaluate('()=>window.tt.magnification')-1.0)<0.0001,'Double click did not reset zoom'
   checks.append('Double-click resets zoom')
   assert not exceptions,exceptions
   checks.append('No browser JavaScript exceptions')
