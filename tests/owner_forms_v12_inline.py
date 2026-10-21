@@ -41,7 +41,7 @@ def main():
     route=res['route'];tested+=1
     if res['body']<50:failures.append((width,route,'empty view',res))
     if res['width']>width+2:failures.append((width,route,'horizontal overflow',res))
-    if route in STUDIOS and res['canvas']!=1:failures.append((width,route,'missing canvas',res))
+    if route in STUDIOS and res['canvas']<1:failures.append((width,route,'missing canvas',res))
    # auth owner before owner test
    page.evaluate("()=>{window.__KWU_TEST_PATH='/login';window.__KWU_TEST_RENDER()}")
    page.locator('#login-email').fill('owner@example.test')

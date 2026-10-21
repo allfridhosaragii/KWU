@@ -8,7 +8,7 @@ ROOT=Path(__file__).resolve().parents[1]
 ATLAS=ROOT/'site/assets/turntables'
 MANIFEST=json.loads((ATLAS/'manifest.json').read_text())
 SOURCE=(ROOT/'site/assets/turntable.js').read_text().replace('export class Turntable360','class Turntable360')
-assert MANIFEST['version']==11
+assert MANIFEST['version']==16
 meta=MANIFEST['models']['bracelet']
 assert meta['tileSize']==768 and meta['splitElevations'] and meta['atlasFormat']=='png'
 checks=[]
@@ -31,9 +31,9 @@ with sync_playwright() as playwright:
     page.set_content('<!doctype html><html lang="id"><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0;background:#FAF8F4}.stage{width:100vw;height:75vh;position:relative;overflow:hidden}.kwu-turntable{position:absolute;inset:0;display:flex;justify-content:center;align-items:center;touch-action:none;overflow:hidden}.kwu-turntable-sprite{width:100%;height:auto;max-height:100%;aspect-ratio:1;flex-shrink:1;background-repeat:no-repeat;transform-origin:center center;pointer-events:none}@media(min-aspect-ratio:1/1){.kwu-turntable-sprite{width:auto;height:100%;max-width:100%}}</style></head><body><div class="stage"></div><p id="mode"></p></body></html>')
     page.add_script_tag(content=SOURCE)
     page.evaluate('''async ()=>{window.tt = new Turntable360(document.querySelector('.stage'),'https://kwu.test/',s=>document.querySelector('#mode').textContent=s);await window.tt.load('bracelet')}''')
-    page.wait_for_function("document.querySelector('.kwu-turntable-sprite').style.backgroundImage.includes('bracelet--sawo-matang--e0.png')",timeout=15000)
+    page.wait_for_function("window.tt.renderedAtlas.includes('bracelet--sawo-matang--e0.png') && document.querySelector('.kwu-turntable-sprite canvas').width === 768",timeout=15000)
     checks.append('Default sawo matang loads 768px e0 PNG')
-    assert '360° HD' in page.locator('#mode').inner_text()
+    assert 'HD 1536p' in page.locator('#mode').inner_text()
     checks.append('HD status shows true source resolution')
     for width in [320,390,768,1440]:
         page.set_viewport_size({'width':width,'height':850})
@@ -58,13 +58,13 @@ with sync_playwright() as playwright:
     page.set_viewport_size({'width':390,'height':850})
     page.evaluate('()=>window.tt.reset()')
     page.evaluate('()=>window.tt.setSkinTone("deep-brown")')
-    page.wait_for_function("document.querySelector('.kwu-turntable-sprite').style.backgroundImage.includes('bracelet--deep-brown--e0.png')",timeout=15000)
+    page.wait_for_function("window.tt.renderedAtlas.includes('bracelet--deep-brown--e0.png')",timeout=15000)
     checks.append('Skin tone switches to HD PNG, no low-res fallback')
     stage=page.locator('.kwu-turntable');bounds=stage.bounding_box();x=bounds['x']+bounds['width']*.5;y=bounds['y']+bounds['height']*.55
     page.mouse.move(x,y);page.mouse.down();page.mouse.move(x,y-170,steps=8);page.mouse.up()
-    page.wait_for_function("document.querySelector('.kwu-turntable-sprite').style.backgroundImage.includes('bracelet--deep-brown--e1.png')",timeout=15000)
+    page.wait_for_function("window.tt.renderedAtlas.includes('bracelet--deep-brown--e1.png')",timeout=15000)
     checks.append('Vertical drag lazy loads independent HD e1 PNG')
-    dims=page.evaluate('''()=>({frame:window.tt.element.dataset.frame,mode:document.querySelector('#mode').textContent,background:document.querySelector('.kwu-turntable-sprite').style.backgroundImage})''')
+    dims=page.evaluate('''()=>({frame:window.tt.element.dataset.frame,mode:document.querySelector('#mode').textContent,atlas:window.tt.renderedAtlas,canvasWidth:document.querySelector('.kwu-turntable-sprite canvas').width})''')
     assert not errors,errors
     checks.append('No JavaScript errors')
     page.screenshot(path=str(ROOT/'qa-v11-hd-mobile.png'),full_page=False)
