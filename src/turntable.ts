@@ -44,11 +44,8 @@ class RetinaStill {
    // frames bounded in memory to avoid Safari tab reloads on mobile.
    const image=new Image();image.decoding='async';image.draggable=false;
    if('fetchPriority' in image)image.fetchPriority=highPriority?'high':'low';
-   const request=image.decode ? undefined : null;
    image.src=url;
-   const pending=(request===null?new Promise<void>((resolve,reject)=>{
-     image.onload=()=>resolve();image.onerror=()=>reject(new Error('HD frame unavailable'));
-   }):image.decode()).then(()=>{
+   const pending=image.decode().then(()=>{
      if(this.disposed)return null;
      this.touch(url,image);
      return image;
