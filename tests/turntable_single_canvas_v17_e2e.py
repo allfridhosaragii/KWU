@@ -45,11 +45,12 @@ with sync_playwright() as pw:
   assert page.locator('.kwu-turntable img').count()==0,'Second visible HD image returned'
   assert page.locator('.kwu-turntable canvas').count()==1,'More than one canvas in product view'
   checks.append('Only one canvas, no overlaid image, full 1536p frame')
-  before=page.evaluate("() => document.querySelector('.kwu-turntable canvas').toDataURL('image/png')")
+  # Screenshot comparison works even in a cross-origin test fixture where toDataURL is blocked.
+  before=page.locator('.kwu-turntable canvas').screenshot()
   page.evaluate('()=>window.tt.rotate(30)')
   page.wait_for_function("window.tt?.retina?.activeFrame()?.naturalWidth===1536 && document.querySelector('.kwu-turntable canvas').width===1536 && Number(window.tt.element.dataset.frame)===2",timeout=30000)
-  after=page.evaluate("() => document.querySelector('.kwu-turntable canvas').toDataURL('image/png')")
-  assert hashlib.sha256(before.encode()).digest()!=hashlib.sha256(after.encode()).digest(),'Canvas image did not change after rotation'
+  after=page.locator('.kwu-turntable canvas').screenshot()
+  assert hashlib.sha256(before).digest()!=hashlib.sha256(after).digest(),'Canvas image did not change after rotation'
   checks.append('Rotation updates visible HD pixels, not only a frame counter')
   for width in [320,390,768,1440]:
     page.set_viewport_size({'width':width,'height':800})
