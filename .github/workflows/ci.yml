@@ -41,3 +41,5 @@ jobs:
           done
       - name: Test 360-degree ornament position color and size controls
         run: python tests/interactive_controls_v13_inline.py
+      - name: Test single-canvas retina HD rotation and zoom (V17)
+        run: python tests/turntable_single_canvas_v17_e2e.py
