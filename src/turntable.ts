@@ -24,7 +24,7 @@ class RetinaStill {
    const safeTone=colors.includes(tone)?tone:'sawo-matang';
    const safeRow=Math.max(0,Math.min(1,Math.round(row)));
    const safeAngle=((Math.round(angle)%24)+24)%24;
-   return this.base+'assets/turntables/hires/'+model+'/'+safeTone+'/e'+safeRow+'/a'+String(safeAngle).padStart(2,'0')+'.webp?v=15-1';
+   return this.base+'assets/turntables/hires/'+model+'/'+safeTone+'/e'+safeRow+'/a'+String(safeAngle).padStart(2,'0')+'.webp?v=16-1';
  }
  private touch(url:string,img:HTMLImageElement){
    this.cachedFrames.delete(url);
@@ -131,6 +131,9 @@ const bound=(n:number,low:number,high:number)=>Math.min(high,Math.max(low,n));
 export class Turntable360 {
  readonly element:HTMLDivElement;
  private sprite:HTMLDivElement;
+ private frameCanvas:HTMLCanvasElement;
+ private frameContext:CanvasRenderingContext2D;
+ private renderedFrame='';
  private retina:RetinaStill;
  private detailPreview:HTMLDivElement;
  private detailBadge:HTMLDivElement;
@@ -157,7 +160,13 @@ export class Turntable360 {
    outer.setAttribute('role','group');outer.setAttribute('aria-label','Pratinjau 360 derajat. Geser ke kiri dan kanan untuk memutar; ke atas atau bawah untuk mengubah sudut. Cubit untuk zoom.');
    outer.style.touchAction='none';outer.style.userSelect='none';
    const sprite=document.createElement('div');sprite.className='kwu-turntable-sprite';outer.append(sprite);
-   this.element=outer;this.sprite=sprite;this.retina=new RetinaStill(outer,base);
+   const frameCanvas=document.createElement('canvas');frameCanvas.width=1;frameCanvas.height=1;
+   frameCanvas.style.cssText='display:block;width:100%;height:100%;pointer-events:none;image-rendering:auto';
+   const ctx=frameCanvas.getContext('2d',{alpha:false});
+   if(!ctx)throw new Error('Canvas2D tidak tersedia');
+   sprite.append(frameCanvas);
+   this.element=outer;this.sprite=sprite;this.frameCanvas=frameCanvas;this.frameContext=ctx;
+   this.retina=new RetinaStill(outer,base);
    const ornamentPreview=document.createElement('div');
    ornamentPreview.className='kwu-decoration-preview';
    ornamentPreview.setAttribute('aria-label','Ilustrasi ornamen yang dipilih');
@@ -250,9 +259,10 @@ export class Turntable360 {
      this.meta=meta;this.azimuth=0;this.pitchRow=0;this.magnification=1;
      if(this.picture){this.picture.remove();this.picture=null;}
      if(this.designParams)this.setCustomization(this.designParams);
+     this.sprite.replaceChildren(this.frameCanvas);
      this.sprite.style.backgroundImage='none';
-     this.sprite.style.backgroundRepeat='no-repeat';
-     this.sprite.style.backgroundSize=`${meta.columns*100}% ${meta.rows*100}%`;
+     this.frameCanvas.width=meta.tileSize;this.frameCanvas.height=meta.tileSize;
+     this.renderedFrame='';
      await this.useAtlas(0);
    }catch(error){
      if(this.disposed||name!==this.lastName)return;
@@ -291,8 +301,7 @@ export class Turntable360 {
      await image.decode();
      if(this.disposed||seq!==this.atlasSequence||url!==this.atlasUrl(Math.round(bound(this.pitchRow,0,m.elevations.length-1))))return;
      this.currentImg=image;this.renderedAtlas=url;this.loadingAtlas='';
-     this.sprite.style.backgroundImage=`url("${url}")`;
-     this.sprite.style.backgroundSize=`${m.columns*100}% ${m.rows*100}%`;
+     this.renderedFrame='';this.sprite.style.backgroundImage='none';
      this.paint();
      this.onStatus(['bracelet','ring','necklace'].includes(m.name)?'360° bisa diputar • HD 1536p dimuat otomatis':'360° bisa diputar • '+m.tileSize+'p per sudut');
    }catch(error){
@@ -315,9 +324,20 @@ export class Turntable360 {
    }
    const frame=m.splitElevations?horizontal:elevation*m.azimuthFrames+horizontal;
    const x=frame%m.columns,y=Math.floor(frame/m.columns);
-   const xPct=m.columns>1?100*x/(m.columns-1):0;
-   const yPct=m.rows>1?100*y/(m.rows-1):0;
-   this.sprite.style.backgroundPosition=`${xPct.toFixed(4)}% ${yPct.toFixed(4)}%`;
+   // Explicitly isolate the frame, otherwise zoom may reveal adjacent atlas tiles.
+   if(this.currentImg && this.renderedAtlas===this.atlasUrl(elevation)){
+     const key=this.renderedAtlas+':'+frame;
+     if(this.renderedFrame!==key){
+       const tile=m.tileSize;
+       if(this.frameCanvas.width!==tile||this.frameCanvas.height!==tile){
+         this.frameCanvas.width=tile;this.frameCanvas.height=tile;
+       }
+       if(this.currentImg.naturalWidth>=(x+1)*tile && this.currentImg.naturalHeight>=(y+1)*tile){
+         this.frameContext.drawImage(this.currentImg,x*tile,y*tile,tile,tile,0,0,tile,tile);
+         this.renderedFrame=key;
+       }else console.warn('[KWU 360] Atlas dimensions mismatch',m);
+     }
+   }
    this.element.dataset.frame=String(elevation*m.azimuthFrames+horizontal);
    if(this.requestedQuality!=='low')this.retina.display(m.name,this.skinTone,elevation,horizontal,this.magnification);
  }

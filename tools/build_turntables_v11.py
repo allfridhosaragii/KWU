@@ -266,6 +266,6 @@ def main():
         old=json.loads(prior.read_text(encoding='utf-8'))['models']
         for name,meta in old.items():
             if name not in data:data[name]=meta
-    prior.write_text(json.dumps({'version':14,'models':data},indent=2),encoding='utf-8')
+    prior.write_text(json.dumps({'version':16,'models':data},indent=2),encoding='utf-8')
     print('generated',len(names),'of',len(data),'in',round(time.monotonic()-start,1),'sec',flush=True)
 if __name__=='__main__':main()

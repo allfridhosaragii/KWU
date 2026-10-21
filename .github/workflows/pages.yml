@@ -38,7 +38,7 @@ jobs:
             echo "rebuild=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if printf '%s\n' "$changed" | grep -Eq '^(assets/|site/models/|site/assets/turntables/|site/assets/previews/|tools/(make_models_v2|photoreal_projection_v5|anatomy_refinement_v5|build_anatomical_cc0|skin_detail_postprocess_v6|skin_anatomy_v7|repair_fingernails_v11|anatomy_surface_v14|device_detail_v5|update_catalog_v5|photo_previews_v5|render_v5_previews|build_turntables_v11|check_turntables_v11)\.py)'; then
+          if printf '%s\n' "$changed" | grep -Eq '^(assets/|site/models/|site/assets/turntables/|site/assets/previews/|tools/(make_models_v2|photoreal_projection_v5|anatomy_refinement_v5|build_anatomical_cc0|skin_detail_postprocess_v6|skin_anatomy_v7|repair_fingernails_v11|anatomy_surface_v14|repair_forearm_v16|device_detail_v5|update_catalog_v5|photo_previews_v5|render_v5_previews|build_turntables_v11|check_turntables_v11)\.py)'; then
             echo "rebuild=true" >> "$GITHUB_OUTPUT"
           else
             echo "rebuild=false" >> "$GITHUB_OUTPUT"
@@ -80,6 +80,11 @@ jobs:
       - name: Smooth anatomical surfaces without losing PBR textures (V14)
         if: steps.changes.outputs.rebuild == 'true'
         run: python tools/anatomy_surface_v14.py
+      - name: Repair broken forearm caps for bracelet and ring (V16)
+        if: steps.changes.outputs.rebuild == 'true'
+        run: |
+          python tools/repair_forearm_v16.py
+          python tools/check_forearm_v16.py
       - name: Refine device optical details and logo
         if: steps.changes.outputs.rebuild == 'true'
         run: python tools/device_detail_v5.py
