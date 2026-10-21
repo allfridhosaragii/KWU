@@ -15,7 +15,7 @@ permissions:
   id-token: write
 concurrency:
   group: github-pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,6 +23,29 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
+          fetch-depth: 2
+      - name: Detect whether 3D models changed
+        id: changes
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "rebuild=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git rev-parse HEAD^ >/dev/null 2>&1; then
+            changed="$(git diff --name-only HEAD^ HEAD)"
+          else
+            echo "rebuild=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if printf '%s\n' "$changed" | grep -Eq '^(assets/|site/models/|site/assets/turntables/|site/assets/previews/|tools/(make_models_v2|photoreal_projection_v5|anatomy_refinement_v5|build_anatomical_cc0|skin_detail_postprocess_v6|skin_anatomy_v7|repair_fingernails_v11|anatomy_surface_v14|device_detail_v5|update_catalog_v5|photo_previews_v5|render_v5_previews|build_turntables_v11|check_turntables_v11)\.py)'; then
+            echo "rebuild=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "rebuild=false" >> "$GITHUB_OUTPUT"
+            echo "Frontend-only change: reusing checked-in GLB and 1536p assets"
+          fi
+      - name: Install frontend dependencies
+        run: npm install --no-audit --no-fund
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -30,46 +53,62 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install build dependencies
+        if: steps.changes.outputs.rebuild == 'true'
         run: |
           python -m pip install --disable-pip-version-check numpy scipy trimesh pillow scikit-image opencv-python-headless cairosvg vtk shapely
-          npm install --no-audit --no-fund
       - name: Generate original source models
+        if: steps.changes.outputs.rebuild == 'true'
         run: python tools/make_models_v2.py
       - name: Project user photos onto GLB front surfaces
+        if: steps.changes.outputs.rebuild == 'true'
         run: python tools/photoreal_projection_v5.py
       - name: Refine hand and neck geometry
+        if: steps.changes.outputs.rebuild == 'true'
         run: python tools/anatomy_refinement_v5.py
       - name: Replace procedural mannequin with CC0 human anatomy
+        if: steps.changes.outputs.rebuild == 'true'
         run: python tools/build_anatomical_cc0.py
       - name: Enhance anatomical skin details (V6)
+        if: steps.changes.outputs.rebuild == 'true'
         run: python tools/skin_detail_postprocess_v6.py
       - name: Enhance anatomical PBR normal and skin tone maps (V7)
+        if: steps.changes.outputs.rebuild == 'true'
         run: python tools/skin_anatomy_v7.py
       - name: Repair incomplete anatomical fingernails (V11)
+        if: steps.changes.outputs.rebuild == 'true'
         run: python tools/repair_fingernails_v11.py
       - name: Smooth anatomical surfaces without losing PBR textures (V14)
+        if: steps.changes.outputs.rebuild == 'true'
         run: python tools/anatomy_surface_v14.py
       - name: Refine device optical details and logo
+        if: steps.changes.outputs.rebuild == 'true'
         run: python tools/device_detail_v5.py
       - name: Update metadata and no-WebGL posters
+        if: steps.changes.outputs.rebuild == 'true'
         run: |
           python tools/update_catalog_v5.py
           python tools/photo_previews_v5.py
       - name: Generate updated anatomy previews
+        if: steps.changes.outputs.rebuild == 'true'
         run: KWU_PREVIEW_MODELS=bracelet,ring,necklace xvfb-run -a python tools/render_v5_previews.py
       - name: Generate improved 360-degree atlases for all 21 models (V14)
+        if: steps.changes.outputs.rebuild == 'true'
         run: xvfb-run -a python tools/build_turntables_v11.py
       - name: Verify HD atlases and retina 1536px still frames (V12)
+        if: steps.changes.outputs.rebuild == 'true'
         run: python tools/check_turntables_v11.py
       - name: Complete KWU demo owner forms and controls (V12)
         run: python tools/feature_completion_v12.py
       - name: Source build and static integrity
         run: |
           npm run build
-          python tools/check_models_v2.py
+      - name: Check model pipeline after rebuild
+        if: steps.changes.outputs.rebuild == 'true'
+        run: python tools/check_models_v2.py
       - name: Bust caches for HD 360-degree viewer V11
         run: python tools/cache_bust_v11.py
       - name: Commit generated model data back to main
+        if: steps.changes.outputs.rebuild == 'true'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
